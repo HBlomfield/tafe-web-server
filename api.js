@@ -287,13 +287,13 @@ class CRUD { // class to access the database
 		})
 		await promise;
 	}
-	async GetUserPosts (ID) {
+	async GetUserPosts(ID) {
 		let posts = {};
-		let promise = new Promise ((resolve)=>{
+		let promise = new Promise((resolve) => {
 			databasePool.getConnection(function (err, connection) {
 				if (err) throw err;
-				let query = "SELECT posts.ID as PostID, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.UserID = '"+ID+"' AND posts.IsDisabled !=1;";
-				connection.query (query, function (err, result) {
+				let query = "SELECT posts.ID as PostID, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.UserID = '" + ID + "' AND posts.IsDisabled !=1;";
+				connection.query(query, function (err, result) {
 					$(terminal.note + terminal.indent + query);
 					if (err) throw err;
 					posts = result;
@@ -306,13 +306,13 @@ class CRUD { // class to access the database
 		await promise;
 		return posts;
 	}
-	async GetGroupPosts (ID) {
+	async GetGroupPosts(ID) {
 		let posts = {};
-		let promise = new Promise ((resolve)=>{
+		let promise = new Promise((resolve) => {
 			databasePool.getConnection(function (err, connection) {
 				if (err) throw err;
-				let query = "SELECT posts.ID as PostID, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.GroupID = '"+ID+"' AND posts.IsDisabled !=1;";
-				connection.query (query, function (err, result) {
+				let query = "SELECT posts.ID as PostID, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.GroupID = '" + ID + "' AND posts.IsDisabled !=1;";
+				connection.query(query, function (err, result) {
 					$(terminal.note + terminal.indent + query);
 					if (err) throw err;
 					posts = result;
@@ -333,7 +333,7 @@ class CRUD { // class to access the database
 			databasePool.getConnection(async function (err, connection) {
 				if (err) throw err;
 				let promise = new Promise((resolve) => {
-					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon,posts.ID as PostID, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ID = '"+ID+"';";
+					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon,posts.ID as PostID, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ID = '" + ID + "';";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
@@ -343,37 +343,37 @@ class CRUD { // class to access the database
 					});
 				});
 				await promise;
-				promise = new Promise ((resolve)=> {
-					let query = "SELECT groups.ID as GroupID, groups.DisplayName as GroupDisplayName, groups.DisplayIcon as GroupDisplayIcon FROM posts INNER JOIN groups ON posts.GroupID = groups.ID WHERE posts.ID = '"+ID+"';";
-					connection.query (query, function (err, result) {
+				promise = new Promise((resolve) => {
+					let query = "SELECT groups.ID as GroupID, groups.DisplayName as GroupDisplayName, groups.DisplayIcon as GroupDisplayIcon FROM posts INNER JOIN groups ON posts.GroupID = groups.ID WHERE posts.ID = '" + ID + "';";
+					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
 						groupInfo = result;
 						// $(result)
-						resolve ();
+						resolve();
 					})
 				});
 				await promise;
-				promise = new Promise ((resolve) => {
-					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ReplyToID = '"+ID+"';";
-					connection.query (query, function (err, result) {
+				promise = new Promise((resolve) => {
+					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ReplyToID = '" + ID + "';";
+					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
 						postReplies = result;
-						resolve ();
+						resolve();
 					})
 				})
 				await promise;
-				connection.release ();
-				resolve ();
+				connection.release();
+				resolve();
 
 			})
 		});
 		await main;
 		return {
-			post:postInfo,
-			group:groupInfo,
-			replies:postReplies,
+			post: postInfo,
+			group: groupInfo,
+			replies: postReplies,
 
 		}
 	}
@@ -450,12 +450,23 @@ async function IndexProcess(req, res) {
 	//#region rate limiting
 	// to add: use access file to track last access, and block if more than 1 per second, 1000 per day (429)
 	if (fs.existsSync(accessPath + req.connection.remoteAddress)) { // check the file exists before trying to read it
-		let access = Number(fs.readFileSync(accessPath + req.connection.remoteAddress)); // read the contents of the file that stores the access data
+		let accessFile = fs.readFileSync(accessPath + req.connection.remoteAddress).toString();
+		let access = Number(accessFile.split("\n")[0]); // read the contents of the file that stores the access data
+		let accessToday = Number(accessFile.split("\n")[1]);
 		$(terminal.note + terminal.indent + "Last Access: " + new Date(access).toString());
-		fs.writeFileSync(accessPath + req.connection.remoteAddress, Date.now().toString()); // update the last access time in the file, we do this before checking the time otherwise the requester can still squeeze 1 request in
+		if (Date.now() - access < (1000 * 60 * 60 * 24)) { // if it has been a day since the last access, reset the amount of accesses in the 24 hour period
+			accessToday += 1;
+		} else {
+			accessToday = 0;
+		}
+		if (accessToday > 1000) {
+			return Stop (429);
+		}
+		fs.writeFileSync(accessPath + req.connection.remoteAddress, Date.now().toString() + "\n" + accessToday); // update the last access time in the file, we do this before checking the time otherwise the requester can still squeeze 1 request in
 		if (Date.now() - access < 1000) { // the user has requested multiple times in the span of 1 seconds
 			$(terminal.danger + "Last access was less than a second ago"); // 1000 milliseconsd is 1 second, if the time+1000 is less time, it means a second has not yet psased 
 			return Stop(429);
+
 		}
 	} else {
 		$(terminal.info + "This is the first access by this IP");
@@ -571,12 +582,12 @@ async function IndexProcess(req, res) {
 		else wrongMethod = true;
 	}
 	if (/^\/api\/post\/user\/[a-f0-9]{20}\/$/.test(req.url)) { // /api/post/user/{id}
-		actionIndex = req.url.slice(-21,-1);
+		actionIndex = req.url.slice(-21, -1);
 		if (req.method == "GET") action = actions.getUserPosts; // as the client view only shows a few posts, this is a version that shows all of the posts of the user
 		else wrongMethod = true;
 	}
 	if (/^\/api\/post\/group\/[a-f0-9]{20}\/$/.test(req.url)) { // /api/post/group/{id}
-		actionIndex = req.url.slice(-21,-1);
+		actionIndex = req.url.slice(-21, -1);
 		if (req.method == "GET") action = actions.getGroupPosts; // as the client view only shows a few posts, this is a version that shows all of the posts of the user
 		else wrongMethod = true;
 	}
@@ -822,10 +833,10 @@ async function IndexProcess(req, res) {
 
 		// $(result);
 		res.write(JSON.stringify({ // get the data from the multiple queries, into 1 json file
-			"user": result.user,//[0],
-			"friends": result.friends,//[0],
-			"posts": result.posts,//[0],
-			"groups": result.groups//[0]
+			"user": result.user, //[0],
+			"friends": result.friends, //[0],
+			"posts": result.posts, //[0],
+			"groups": result.groups //[0]
 		}));
 		return Stop(200); // the user has been found 
 	}
@@ -833,45 +844,49 @@ async function IndexProcess(req, res) {
 	if (action == actions.readPost) {
 		$(terminal.info + "Selected action: Get post");
 		let result = await crud.GetPost(actionIndex);
-		if (result === undefined || result.post === undefined || result.post.length == 0) {// if the post was not found, or slq error happened
+		if (result === undefined || result.post === undefined || result.post.length == 0) { // if the post was not found, or slq error happened
 			$(terminal.danger + "Post was not found")
-			return Stop (404, "POST_NOT_FOUND");
+			return Stop(404, "POST_NOT_FOUND");
 		}
 		$(terminal.success + "Post was found")
-		res.write (JSON.stringify({"post":result.post,"group":result.group,"replies":result.replies}));
-		return Stop (200);
+		res.write(JSON.stringify({
+			"post": result.post,
+			"group": result.group,
+			"replies": result.replies
+		}));
+		return Stop(200);
 	}
 	if (action == actions.getUserPosts) {
 		$(terminal.info + "Selected action: Get user's posts");
 		$(actionIndex);
 		let result = await crud.GetUserPosts(actionIndex);
-		
+
 		// $(result);
-		
-		if (result === undefined || result === undefined || result.length == 0) {// if the post was not found, or slq error happened
+
+		if (result === undefined || result === undefined || result.length == 0) { // if the post was not found, or slq error happened
 			$(terminal.danger + "Post was not found")
-			return Stop (404, "POST_NOT_FOUND");
+			return Stop(404, "POST_NOT_FOUND");
 		}
 		$(terminal.success + "Post were found")
-		res.write (JSON.stringify(result));
-		return Stop (200);
-		
+		res.write(JSON.stringify(result));
+		return Stop(200);
+
 	}
 	if (action == actions.getGroupPosts) {
 		$(terminal.info + "Selected action: Get user's posts");
 		$(actionIndex);
 		let result = await crud.GetGroupPosts(actionIndex);
-		
+
 		// $(result);
-		
-		if (result === undefined || result === undefined || result.length == 0) {// if the post was not found, or slq error happened
+
+		if (result === undefined || result === undefined || result.length == 0) { // if the post was not found, or slq error happened
 			$(terminal.danger + "Post was not found")
-			return Stop (404, "POST_NOT_FOUND");
+			return Stop(404, "POST_NOT_FOUND");
 		}
 		$(terminal.success + "Posts were found")
-		res.write (JSON.stringify(result));
-		return Stop (200);
-		
+		res.write(JSON.stringify(result));
+		return Stop(200);
+
 	}
 }
 
