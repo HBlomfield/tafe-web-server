@@ -18,7 +18,7 @@
 // O integrate the database for 2 crud actions
 // O logging feature that accounts for every request with IP, session, username, user type, timestamp and action
 // O rate limit to 1 request per second
-// X rate limit to 1000 requests per day  // its 11:32pm and I've been awake for 40 hours working on this I dont care
+// X rate limit to 1000 requests per day 
 // O domain lock web service to whitelist of referers - only allows origin of localhost
 
 // part b
