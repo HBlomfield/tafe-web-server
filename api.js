@@ -18,7 +18,7 @@
 // O integrate the database for 2 crud actions
 // O logging feature that accounts for every request with IP, session, username, user type, timestamp and action
 // O rate limit to 1 request per second
-// X rate limit to 1000 requests per day 
+// O rate limit to 1000 requests per day 
 // O domain lock web service to whitelist of referers - only allows origin of localhost
 
 // part b
@@ -190,7 +190,7 @@ class CRUD { // class to access the database
 			databasePool.getConnection(async function (err, connection) {
 				let query = ""
 				if (err) throw err;
-				let promise = new Promise((resolve) => { // we reuse the same name but with different promises -> sounds like a song lyric
+				await new Promise((resolve) => { // we reuse the same name but with different promises -> sounds like a song lyric
 					query = "SELECT DisplayName, DisplayIcon, DisplayBio, JoinedOn FROM users WHERE ID = '" + ID + "' AND IsDisabled != 1 AND IsPrivate != 1 ORDER BY JoinedOn LIMIT 1;"; // get the user's basic info				
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
@@ -203,8 +203,7 @@ class CRUD { // class to access the database
 						resolve();
 					})
 				});
-				await promise;
-				promise = new Promise((resolve) => {
+				await new Promise((resolve) => {
 					query = "SELECT users.ID, users.DisplayName, users.DisplayIcon FROM users INNER JOIN userrelations ON ((userrelations.UserID = users.ID AND userrelations.RelationUserID = '" + ID + "') OR (userrelations.UserID = '" + ID + "' AND userrelations.RelationUserID = users.ID)) AND userrelations.SocialStatus = 1 AND userrelations.IsDisabled != 1 AND users.IsPrivate != 1 AND users.IsDisabled != 1 GROUP BY users.ID;";
 					// this here is a massive query and the longest line of the code so I'll break it down on this line instead of that one
 					// [select users.accountname, users.accounticon from users] the first part just selects the name and icon from the friends, simple
@@ -224,8 +223,7 @@ class CRUD { // class to access the database
 						resolve();
 					})
 				});
-				await promise;
-				promise = new Promise((resolve) => {
+				await new Promise((resolve) => {
 					query = "SELECT posts.ID, posts.GroupID, posts.Text, posts.Drawing, posts.CreationDate, posts.IsSpoiler, posts.IsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID AND posts.UserID = '" + ID + "' AND posts.IsDisabled != 1 ORDER BY CreationDate DESC LIMIT 3;";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
@@ -235,8 +233,7 @@ class CRUD { // class to access the database
 						resolve();
 					});
 				});
-				await promise;
-				promise = new Promise((resolve) => {
+				await new Promise((resolve) => {
 					query = "SELECT groups.ID, groups.DisplayName, groups.DisplayIcon FROM groups INNER JOIN groupmembers ON groups.ID = groupmembers.GroupID AND groupmembers.UserID = '" + ID + "' WHERE groupmembers.IsDisabled != 1;";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
@@ -245,12 +242,10 @@ class CRUD { // class to access the database
 						resolve();
 					})
 				});
-				await promise;
 				connection.release();
 				resolve();
 			});
 		});
-		await main;
 		return {
 			user: userInfo,
 			friends: userFriends,
@@ -261,7 +256,7 @@ class CRUD { // class to access the database
 	async CreateNewUser(ID, email, displayName, password, time) { // create a new user
 		// let pKey = crypto.randomBytes(5).toString('hex'); // the primary key of the new user, because the combinations are 10^16, or 10000000000000000, theres a lot chance someone will get someone elses, unless the population bounces to 10 quintillion
 		let verifyCode = crypto.randomBytes(3).toString('hex'); // the 3 digit code used to verify the user account, again, lots of combinations
-		let promise = new Promise((resolve) => { // the promise that will resolve when the database has been accessed
+		await new Promise((resolve) => { // the promise that will resolve when the database has been accessed
 			databasePool.getConnection(function (err, connection) { // swim in da pool
 				if (err) throw err;
 				connection.query("INSERT INTO users (`ID`,`Email`,`DisplayName`,`Password`, `VerificationCode`, `JoinedOn`) VALUES ('" + ID + "','" + email + "','" + displayName + "','" + password + "','" + verifyCode + "', " + time + ");", function (err, result) { // splash some wattar
@@ -272,10 +267,9 @@ class CRUD { // class to access the database
 				});
 			});
 		});
-		await promise;
 	}
 	async VerifyUser(ID) { // we only need a function to verify the account, no point to un-verify it
-		let promise = new Promise((resolve) => {
+		await new Promise((resolve) => {
 			databasePool.getConnection(function (err, connection) {
 				if (err) throw err;
 				connection.query("UPDATE users SET IsVerified = 1 WHERE ID = '" + ID + "';", function (err) {
@@ -285,11 +279,10 @@ class CRUD { // class to access the database
 				}); // set the IsVerified value from 0 to 1, boolean
 			})
 		})
-		await promise;
 	}
 	async GetUserPosts(ID) {
 		let posts = {};
-		let promise = new Promise((resolve) => {
+		await new Promise((resolve) => {
 			databasePool.getConnection(function (err, connection) {
 				if (err) throw err;
 				let query = "SELECT posts.ID as PostID, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.UserID = '" + ID + "' AND posts.IsDisabled !=1;";
@@ -303,12 +296,11 @@ class CRUD { // class to access the database
 				});
 			})
 		});
-		await promise;
 		return posts;
 	}
 	async GetGroupPosts(ID) {
 		let posts = {};
-		let promise = new Promise((resolve) => {
+		await new Promise((resolve) => {
 			databasePool.getConnection(function (err, connection) {
 				if (err) throw err;
 				let query = "SELECT posts.ID as PostID, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.GroupID = '" + ID + "' AND posts.IsDisabled !=1;";
@@ -322,17 +314,16 @@ class CRUD { // class to access the database
 				});
 			})
 		});
-		await promise;
 		return posts;
 	}
 	async GetPost(ID) { // get the post, the group's name, drawing and ID and the user's name drawing and ID, as well as the username and posts of all the comments
 		let postInfo = {} // post and user info
 		let groupInfo = {}
 		let postReplies = {};
-		let main = new Promise((resolve) => {
+		await new Promise((resolve) => {
 			databasePool.getConnection(async function (err, connection) {
 				if (err) throw err;
-				let promise = new Promise((resolve) => {
+				await new Promise((resolve) => {
 					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon,posts.ID as PostID, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ID = '" + ID + "';";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
@@ -342,8 +333,7 @@ class CRUD { // class to access the database
 						resolve();
 					});
 				});
-				await promise;
-				promise = new Promise((resolve) => {
+				await new Promise((resolve) => {
 					let query = "SELECT groups.ID as GroupID, groups.DisplayName as GroupDisplayName, groups.DisplayIcon as GroupDisplayIcon FROM posts INNER JOIN groups ON posts.GroupID = groups.ID WHERE posts.ID = '" + ID + "';";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
@@ -353,8 +343,7 @@ class CRUD { // class to access the database
 						resolve();
 					})
 				});
-				await promise;
-				promise = new Promise((resolve) => {
+				await new Promise((resolve) => {
 					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ReplyToID = '" + ID + "';";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
@@ -362,14 +351,12 @@ class CRUD { // class to access the database
 						postReplies = result;
 						resolve();
 					})
-				})
-				await promise;
+				});
 				connection.release();
 				resolve();
 
 			})
 		});
-		await main;
 		return {
 			post: postInfo,
 			group: groupInfo,
@@ -377,7 +364,7 @@ class CRUD { // class to access the database
 
 		}
 	}
-	GetUser
+	// GetUser
 }
 var crud = new CRUD();
 
@@ -460,7 +447,8 @@ async function IndexProcess(req, res) {
 			accessToday = 0;
 		}
 		if (accessToday > 1000) {
-			return Stop (429);
+			$(terminal.danger + "More than 1000 accesses today");
+			return Stop(429);
 		}
 		fs.writeFileSync(accessPath + req.connection.remoteAddress, Date.now().toString() + "\n" + accessToday); // update the last access time in the file, we do this before checking the time otherwise the requester can still squeeze 1 request in
 		if (Date.now() - access < 1000) { // the user has requested multiple times in the span of 1 seconds
@@ -603,7 +591,7 @@ async function IndexProcess(req, res) {
 	//#region get the request body
 	$(terminal.info + "Getting chunks for request body");
 	let requestBody = ""; // for larger data, requests might be chunked into seperate pieces 
-	let chunkPromise = new Promise(
+	await new Promise(
 		(resolve, reject) => { // start a promise so that we wait for the request body to be fully received
 			req.on("data", (chunk) => { // whenever a new chunk of data comes in
 				requestBody += chunk; // add the chunk to the body
@@ -614,7 +602,7 @@ async function IndexProcess(req, res) {
 			});
 		}
 	);
-	await chunkPromise; // wait for the request body to be obtained
+	// wait for the request body to be obtained
 	let requestJson = {};
 	let requestKeys = [];
 	if (requestBody.length > 0) {

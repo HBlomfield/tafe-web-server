@@ -1,3 +1,178 @@
+:root {
+	--Primary: #66cc99;
+	--LightBar: #f1f1f1;
+	--DarkBar: #333;
+	--LightBarColor: #fff;
+	--DarkBarColor: #fff;
+	--BarMutedColor: #808080;
+	--LightBarSeperator: #808080;
+	--DarkBarSeperator: #111;
+	--LightBackground: #c0c0c0;
+	/* --DarkBackground: #808080; */
+	--DarkBackground: #555;
+	--LightPostBackground:#ebebeb;
+	--DarkPostBackground:#333;
+	--LightPostText: #333;
+	--DarkPostText: #c0c0c0;
+}
+
 * {
-    color:red;
+	margin:0;padding:0;
+	/* box-sizing:content-box; */
+	/* height:100%;
+	width:100%; */
+	background: none;
+	outline:none;
+	border:none;
+	font-family: sans-serif;
+}
+canvas {
+	display:block;
+}
+
+body {
+	display:grid;
+	grid-template-rows: 48px auto 56px;
+	height:100vh;
+	background:var(--LightBackground);
+}
+body.dark {
+	background:var(--DarkBackground);
+}
+main {
+	overflow:scroll;
+	/* padding-bottom:8px; */
+}
+/*#region header */
+header {
+	position:sticky;
+	top:0;
+	background:whitesmoke;
+	outline: 1px solid var(--LightBarSeperator);
+	color:black;
+	text-align: center;
+	display:grid;
+	grid-template-columns: 48px auto 48px;
+	align-items:center;
+}
+.dark header {
+	background:var(--DarkBar);
+	outline:1px solid var(--DarkBarSeperator);
+	color:white;
+}
+header div {
+	grid-column-start: 2;
+	height:auto;
+}
+header button {
+	color:#808080;
+	font-size:20px;
+}
+/*#endregion */
+/*#region footer */
+footer {
+	position:sticky;
+	bottom:0;
+	background:whitesmoke;
+	outline:1px solid var(--LightBarSeperator);
+}
+
+.dark footer {
+	outline: 1px solid var(--DarkBarSeperator);
+	background:var(--DarkBar);
+}
+footer ul {
+	list-style: none;
+	display:grid;
+	grid-template-columns: repeat(4,25%);
+	width:100%;height:100%;
+}
+footer ul li button.active {
+	color:var(--Primary);
+}
+footer ul li button {
+	color:var(--BarMutedColor);
+	width:100%;
+	height:100%;
+}
+footer ul li button i {
+font-size:20px;
+display:block;
+height:24px
+}
+/*#endregion */
+/*#region context-level post (has the basic info about the post, but not the comments or time posted) */
+.ContextPost {
+	margin-bottom:8px;
+	background:var(--LightPostBackground);
+	box-sizing: border-box;
+	outline:1px solid black;
+	position:relative;
+	top:0;
+	left:0;
+}
+.ContextPost:last-of-type{
+	margin-bottom:0;
+}
+.dark .ContextPost {
+	background:var(--DarkPostBackground);
+	color:var(--DarkPostText);
+}
+.ContextPost > button {
+	position:absolute;
+	top:8px;
+	right:8px;
+	font-size:20px;
+}
+.ContextPost > p {
+	padding:8px;
+}
+.ContextPost *{
+	/* outline:solid black 1px;  */
+	margin:0;
+	padding:0;
+}
+.ContextPost > figure > canvas {
+	width:32px;
+	height:32px;
+	background:white;
+	outline:1px solid black;
+}
+.ContextPost > figure {
+	display:grid;
+	column-gap: 8px;
+	grid-template-columns: 32px auto;
+	padding-left:8px;
+	padding-top:8px;
+}
+.ContextPost > figure > figcaption {
+	height:min-content;
+	align-self:center;
+	font-weight:bold;
+	margin:0;
+}
+.ContextPost > canvas {
+	width:100%;
+	/* width:256px;
+	height:192px; */
+	background:white;
+	outline:1px solid black;
+	/* padding:0;	 */
+	/* margin:8px;; */
+	
+}
+.ContextPost > div {
+	display:grid;
+	grid-template-columns: auto auto;
+	padding:8px;
+}
+.ContextPost > div > button {
+	color:var(--LightPostText);
+	display:grid;
+	grid-template-columns: 48px auto;
+	text-align:center;
+	font-size:18px;
+}
+.dark .ContextPost > div > button {
+	color:var(--DarkPostText);
 }

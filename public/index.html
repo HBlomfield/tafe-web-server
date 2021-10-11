@@ -1,14 +1,103 @@
+<!-- 
+	PART A
+
+	Implemented as a mobile-only app
+	Manifest file contains relevant objects the App will need
+	Use of custom design components that are initially devoid of user-requested data
+	Third Party interactive components used in implementation
+	User-selectalbe theme 
+
+PART B
+
+	Form Validation of all input fields
+	AJAX implemented for at least four get and four post actions
+	Data interchange format between App and RESTful web service using JSON
+	Use of Fetch API to implement AJAX communication
+	localStorage demonstrated remembering user actions, and app reload is contextually remembered at least three (3)
+	Service Worker to cache HTML/CSS/JS objects in-browser, and able to load without the network being present
+
+PART C
+
+	Icon for app in manifest
+	Generous use of glyphs found in layout framework for forms and menus
+	Temporary loading screen (spinner) overlayed on display before JSON objects are rendered from Web Service
+
+PART D
+
+	Screen Shot of Performance tab in DevTools
+	Screen shot showing AJAX (network tab)
+	localStorage (application tab) inside devtools to prove app works
+	PWA audit completed under audits tab
+
+ -->
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="/public/style.css">
 	<script src="/public/main.js"></script>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
 	<title>Document</title>
 </head>
-<body>
-	<h1>TEST</h1>
+
+<body class="dark">
+
+	<header id="Navbar">
+		<div>Page Title</div>
+		<button><i class="bi bi-gear"></i></button>
+	</header>
+
+	<main id="Main">
+		<section id="ExplorePage">
+			<!-- Post -->
+			<article class="ContextPost">
+				<button><i class="bi bi-three-dots"></i></button>
+				<canvas width="256" height="192"></canvas>
+				<figure>
+					<canvas width="64" height="64"></canvas>
+					<figcaption><a>Username</a></figcaption>
+				</figure>
+				<p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Cumque perferendis dolores nulla quae animi
+					tempore odio deleniti nihil. Praesentium magni itaque porro incidunt! Amet officia expedita ad. Hic,
+					tenetur aut.</p>
+				<div>
+					<button>
+						<i class="bi bi-chat-left"></i>
+						<span>123123</span>
+					</button>
+					<button onclick="">
+						<i class="bi bi-star"></i>
+						<span>123123</span>
+					</button>
+				</div>
+			</article>
+
+		</section>
+		<!-- <section id="DrawPage">
+
+		</section>
+		<section id="GroupsPage">
+
+		</section>
+		<section id="FriendsPage">
+
+		</section> -->
+
+	</main>
+
+	<footer id="Tabbar">
+		<ul>
+			<li><button class="active" onclick=""><i class="bi bi-grid-1x2"></i>Explore</button></li>
+			<li><button onclick=""><i class="bi bi-pencil "></i>Draw</button></li>
+			<li><button onclick=""><i class="bi bi-house "></i>Groups</button></li>
+			<li><button onclick=""><i class="bi bi-people"></i>Friends</button></li>
+		</ul>
+	</footer>
+
 </body>
+
 </html>
