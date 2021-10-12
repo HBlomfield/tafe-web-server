@@ -89,7 +89,6 @@ const contentTypes = {
 	"gif": "image/gif"
 }
 
-
 // we put this at the top cuz thats where it belongs
 class Session { // class to manage the user's cookies and sessions
 	constructor(requestObject, responseObject) {
@@ -186,7 +185,7 @@ class CRUD { // class to access the database
 		let userFriends = []; // the info of all of the user's friends
 		let userGroups = []
 		let recentPosts = []; // because we don't want to send all of the user's posts at once, we send the most recent, probably the 3 to 5 most recent for the sake of the client
-		let main = new Promise((resolve) => {
+		await new Promise((resolve) => {
 			databasePool.getConnection(async function (err, connection) {
 				let query = ""
 				if (err) throw err;
@@ -224,7 +223,7 @@ class CRUD { // class to access the database
 					})
 				});
 				await new Promise((resolve) => {
-					query = "SELECT posts.ID, posts.GroupID, posts.Text, posts.Drawing, posts.CreationDate, posts.IsSpoiler, posts.IsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID AND posts.UserID = '" + ID + "' AND posts.IsDisabled != 1 ORDER BY CreationDate DESC LIMIT 3;";
+					query = "SELECT posts.ID, posts.GroupID, posts.Text, posts.Drawing, posts.CreationDate, posts.IsSpoiler, posts.IsNSFW, count(replies.ID) as ReplyCount FROM posts INNER JOIN posts as replies ON replies.ReplyToID = posts.ID INNER JOIN users ON users.ID = posts.UserID AND posts.UserID = '" + ID + "' AND posts.IsDisabled != 1 ORDER BY CreationDate DESC LIMIT 3;";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
@@ -324,12 +323,14 @@ class CRUD { // class to access the database
 			databasePool.getConnection(async function (err, connection) {
 				if (err) throw err;
 				await new Promise((resolve) => {
-					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon,posts.ID as PostID, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ID = '" + ID + "';";
+					// so heres a doozy. sending the raw data to json converts it all to numbers and adds ',' and \n's to it, and makes it larger(69.3kb) than if we send as a string converted to hex(39.6kb). both of these methods are still larger than the original file, which is only 19.7kb. We might as well send it as a string of hex
+					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon,posts.ID as PostID, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ID = '" + ID + "';";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
 						postInfo = result;
 						// $(result);
+						$(typeof (result[0]["PostDrawing"]));
 						resolve();
 					});
 				});

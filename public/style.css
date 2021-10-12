@@ -54,6 +54,7 @@ header {
 	display:grid;
 	grid-template-columns: 48px auto 48px;
 	align-items:center;
+	z-index: 1;
 }
 .dark header {
 	background:var(--DarkBar);
@@ -73,7 +74,8 @@ header button {
 footer {
 	position:sticky;
 	bottom:0;
-	background:whitesmoke;
+	background:var(--LightBar);
+	z-index: 1;
 	outline:1px solid var(--LightBarSeperator);
 }
 
@@ -176,3 +178,4 @@ height:24px
 .dark .ContextPost > div > button {
 	color:var(--DarkPostText);
 }
+/* #endregion */
