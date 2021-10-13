@@ -1,6 +1,14 @@
+/* @import url('https://fonts.googleapis.com/css2?family=Farsan&display=swap'); */
+/* @import url('https://fonts.googleapis.com/css2?family=Pompiere&display=swap'); */
+/* @import url('https://fonts.googleapis.com/css2?family=Xanh+Mono&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=Nova+Mono&display=swap');
+
 :root {
-	--Primary: #66cc99;
+	/* --Primary: #66cc99; */
+	/* --Primary:#eb7d73; */
+	--Primary: #70a534;
 	--LightBar: #f1f1f1;
+	/*linear-gradient(0deg, rgb(61, 226, 255), rgb(122, 255, 215));*/
 	--DarkBar: #333;
 	--LightBarColor: #fff;
 	--DarkBarColor: #fff;
@@ -8,174 +16,491 @@
 	--LightBarSeperator: #808080;
 	--DarkBarSeperator: #111;
 	--LightBackground: #c0c0c0;
+	/*linear-gradient(0deg, rgb(73,23,120,1) 0%, rgb(0,212,255,1) 100%);*/
 	/* --DarkBackground: #808080; */
 	--DarkBackground: #555;
-	--LightPostBackground:#ebebeb;
-	--DarkPostBackground:#333;
+	--LightPostBackground: #ebebeb;
+	--DarkPostBackground: #333;
 	--LightPostText: #333;
 	--DarkPostText: #c0c0c0;
 }
 
 * {
-	margin:0;padding:0;
+	margin: 0;
+	padding: 0;
 	/* box-sizing:content-box; */
 	/* height:100%;
 	width:100%; */
 	background: none;
-	outline:none;
-	border:none;
-	font-family: sans-serif;
+	outline: none;
+	border: none;
+	font-family: 'Nova Mono', monospace;
+	font-size: 16px;
 }
+
 canvas {
-	display:block;
+	display: block;
 }
 
 body {
-	display:grid;
-	grid-template-rows: 48px auto 56px;
-	height:100vh;
-	background:var(--LightBackground);
+	display: grid;
+	grid-template-rows: 36px auto 36px;
+	height: 100vh;
+	background: var(--LightBackground);
 }
+
 body.dark {
-	background:var(--DarkBackground);
+	background: var(--DarkBackground);
 }
+
 main {
-	overflow:scroll;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	/* display:flex; */
+	/* justify-content: center; */
+	/* padding-bottom:90px; */
 	/* padding-bottom:8px; */
 }
+
+section {
+	/* padding-bottom:8px;; */
+	width: 100%;
+}
+
 /*#region header */
 header {
-	position:sticky;
-	top:0;
-	background:whitesmoke;
+	position: sticky;
+	top: 0;
+	background: whitesmoke;
 	outline: 1px solid var(--LightBarSeperator);
-	color:black;
+	color: black;
 	text-align: center;
-	display:grid;
+	display: grid;
 	grid-template-columns: 48px auto 48px;
-	align-items:center;
+	align-items: center;
 	z-index: 1;
+
 }
+
 .dark header {
-	background:var(--DarkBar);
-	outline:1px solid var(--DarkBarSeperator);
-	color:white;
+	background: var(--DarkBar);
+	outline: 1px solid var(--DarkBarSeperator);
+	color: white;
 }
+
 header div {
+
+	/* background:turquoise;
+	background-clip: text;
+	color:transparent; */
 	grid-column-start: 2;
-	height:auto;
+	height: auto;
 }
+
 header button {
-	color:#808080;
+	color: #808080;
+	font-size: 20px;
+}
+header button i {
 	font-size:20px;
 }
+
 /*#endregion */
 /*#region footer */
 footer {
-	position:sticky;
-	bottom:0;
-	background:var(--LightBar);
+	position: sticky;
+	bottom: 0;
+	background: var(--LightBar);
 	z-index: 1;
-	outline:1px solid var(--LightBarSeperator);
+	outline: 1px solid var(--LightBarSeperator);
 }
 
 .dark footer {
 	outline: 1px solid var(--DarkBarSeperator);
-	background:var(--DarkBar);
+	background: var(--DarkBar);
 }
-footer ul {
+
+footer div {
 	list-style: none;
-	display:grid;
-	grid-template-columns: repeat(4,25%);
-	width:100%;height:100%;
+	display: grid;
+	grid-template-columns: repeat(4, 25%);
+	width: 100%;
+	height: 100%;
 }
-footer ul li button.active {
-	color:var(--Primary);
+
+footer div button.active {
+	color: var(--Primary);
 }
-footer ul li button {
-	color:var(--BarMutedColor);
-	width:100%;
-	height:100%;
+
+footer div button {
+	color: var(--BarMutedColor);
+	width: 100%;
+	height: 100%;
+	padding-bottom: 8px;
 }
-footer ul li button i {
-font-size:20px;
-display:block;
-height:24px
+
+footer div button i {
+	font-size: 20px;
+	display: block;
+	height: 24px
 }
-/*#endregion */
-/*#region context-level post (has the basic info about the post, but not the comments or time posted) */
-.ContextPost {
-	margin-bottom:8px;
-	background:var(--LightPostBackground);
-	box-sizing: border-box;
-	outline:1px solid black;
-	position:relative;
-	top:0;
-	left:0;
+
+#PageIntro {
+	text-align: center;
+	font-weight: normal;
+	width: 150px;
+	left: 50%;
+	transform: translateX(-50%);
+	position: absolute;
+	bottom: 46px;
+	font-size: 20px;
+	color: var(--LightPostText);
+	background: var(--LightPostBackground);
+	outline: 1px solid var(--LightBarSeperator);
+	border-radius: 10px;
+	opacity: 100%;
+	transition: opacity 0.3s;
 }
-.ContextPost:last-of-type{
-	margin-bottom:0;
+
+.dark #PageIntro {
+	color: var(--DarkPostText);
+	background: var(--DarkPostBackground);
+	outline: 1px solid var(--DarkBarSeperator);
 }
-.dark .ContextPost {
-	background:var(--DarkPostBackground);
-	color:var(--DarkPostText);
+
+#PageIntro.exit {
+	transition: opacity 2s;
+	opacity: 0%;
 }
-.ContextPost > button {
+
+/* #endregion */
+/* #region spinning footer */
+/* footer {
+	display:block;
+	position:fixed;
+	left:50%;
+	transform:translateX(-50%);
+	bottom:-130px;
+	height:180px;
+	width:180px;
+	background:var(--LightBar);
+	border:1px solid var(--LightBarSeperator);
+	border-radius: 50%;
+}
+.dark footer {
+	background:var(--DarkBar);
+	border:1px solid var(--DarkBarSeperator);
+}
+footer li {
 	position:absolute;
-	top:8px;
-	right:8px;
-	font-size:20px;
+	top:90px;
+	left:90px;
+	width:0px;
+	height:0px;
+	transform:translate(-50%,0);
 }
-.ContextPost > p {
-	padding:8px;
+footer li * {
+	color:var(--BarMutedColor);
+	transform:translate(-50%,-85px);
+	font-size:24px;
 }
-.ContextPost *{
-	/* outline:solid black 1px;  */
-	margin:0;
-	padding:0;
+footer li:nth-of-type(1) {
+	rotate: 60deg;
 }
-.ContextPost > figure > canvas {
-	width:32px;
-	height:32px;
-	background:white;
-	outline:1px solid black;
+
+footer li:nth-of-type(2) {
+	rotate: 120deg;
 }
-.ContextPost > figure {
-	display:grid;
-	column-gap: 8px;
-	grid-template-columns: 32px auto;
-	padding-left:8px;
-	padding-top:8px;
+
+footer li:nth-of-type(3) {
+	rotate: 180deg;
 }
-.ContextPost > figure > figcaption {
-	height:min-content;
-	align-self:center;
-	font-weight:bold;
-	margin:0;
+
+footer li:nth-of-type(4) {
+	rotate: 240deg;
 }
-.ContextPost > canvas {
-	width:100%;
-	/* width:256px;
-	height:192px; */
-	background:white;
-	outline:1px solid black;
-	/* padding:0;	 */
-	/* margin:8px;; */
+
+footer li:nth-of-type(5) {
+	rotate: 300deg;
+} */
+
+/*#endregion */
+@keyframes loading {
+	from {
+		transform: rotate(0deg);
+	}
+
+	to {
+		/* transform: rotate(45deg); */
+
+		transform: rotate(360deg);
+	}
+}
+
+#ExplorePageLoading,
+#SinglePostCommentsLoading {
+	width: 100%;
+	padding-top: 32px;
+	color:var(--BarMutedColor);
+}
+#ExplorePageLoading>div,
+#SinglePostCommentsLoading>div {
+	border:1px solid var(--BarMutedColor);
+	border-radius:50%;
+	width:42px;
+	height:42px;
+	position:relative;
+	margin:auto;
+
+}
+#ExplorePageLoading i,
+#SinglePostCommentsLoading i {
+	display: block;
+	margin: auto;
+	animation:1s loading infinite linear;
+	/* width:24px;
+	height:24px; */
+	position:absolute;
+	top:-1.5px;
+	left:5px;
+	font-size:32px;
+	/* transform:translate(-2px,-2px); */
 	
 }
-.ContextPost > div {
-	display:grid;
+
+#ExplorePageLoading h2,
+#SinglePostCommentsLoading h2 {
+	font-weight: normal;
+	text-align: center;
+	;
+}
+
+/*#region context-level post (has the basic info about the post, but not the comments, groups or time posted) */
+.ContextPost {
+	margin-left: auto;
+	margin-right: auto;
+	margin-bottom: 8px;
+	background: var(--LightPostBackground);
+	box-sizing: border-box;
+	outline: 1px solid black;
+	position: relative;
+	top: 0;
+	left: 0;
+	max-width: 512px;
+	min-width: 230px;
+	width: 100%;
+}
+
+.ContextPost:last-of-type {
+	margin-bottom: 0;
+}
+
+.dark .ContextPost {
+	background: var(--DarkPostBackground);
+	color: var(--DarkPostText);
+}
+
+.ContextPost>button {
+	position: absolute;
+	/* top: 8px; */
+	transform: translateY(-27px);
+	right: 8px;
+	/* font-size: 20px; */
+	color: var(--BarMutedColor);
+}
+
+.ContextPost>p {
+	padding: 8px;
+	line-height: 24px;
+	max-height: 66px;
+	overflow: hidden;
+}
+
+.ContextPost * {
+	/* outline:solid black 1px;  */
+	margin: 0;
+	padding: 0;
+}
+
+.ContextPost>figure>canvas {
+	width: 32px;
+	height: 32px;
+	background: white;
+	outline: 1px solid black;
+}
+
+.ContextPost>figure {
+	display: grid;
+	column-gap: 8px;
+	grid-template-columns: 32px auto;
+	padding-left: 8px;
+	padding-top: 8px;
+}
+
+.ContextPost>figure>figcaption {
+	height: min-content;
+	align-self: center;
+	font-weight: bold;
+	margin: 0;
+}
+
+.ContextPost>div:first-of-type:not(.ContextPost>div:last-of-type)>canvas {
+	width: 100%;
+	/* width:256px;
+	height:192px; */
+	background: white;
+	outline: 1px solid black;
+	/* padding:0;	 */
+	/* margin:8px;; */
+
+}
+
+.ContextPost>div:first-of-type:not(.ContextPost>div:last-of-type) {
+	overflow: hidden;
+	position: relative;
+	top: 0;
+	left: 0;
+}
+
+.ContextPost>div:first-of-type:not(.ContextPost>div:last-of-type)>div {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 1;
+	text-align: center;
+
+}
+
+.ContextPost>div:first-of-type:not(.ContextPost>div:last-of-type)>div>button {
+	background: var(--Primary);
+	padding: 4px;
+	border-radius: 10px;
+	margin-top: 20px;
+	outline: 1px solid var(--DarkBarSeperator);
+
+}
+
+.ContextPost>div:last-of-type {
+	display: grid;
 	grid-template-columns: auto auto;
-	padding:8px;
+	padding: 8px;
 }
-.ContextPost > div > button {
-	color:var(--LightPostText);
-	display:grid;
-	grid-template-columns: 48px auto;
+
+.ContextPost>div:last-of-type>div>i {
+	padding-right: 8px;
+}
+
+.ContextPost canvas.Blur {
+	filter: blur(14px);
+	overflow: hidden;
+}
+
+/* #endregion */
+/* #region detailed post */
+#SinglePostPage {
+	background: var(--LightPostBackground);
+	height:100%;
+	width: 100%;
+}
+
+.dark #SinglePostPage {
+	background: var(--DarkPostBackground);
+	color: var(--DarkPostText);
+}
+
+#SinglePostPage>button {
+	position: absolute;
+	/* top: 8px; */
+	transform: translateY(-27px);
+	right: 8px;
+	/* font-size: 20px; */
+	color: var(--BarMutedColor);
+}
+
+#SinglePostPage>p {
+	padding: 8px;
+	line-height: 24px;
+	max-height: 66px;
+	overflow: hidden;
+}
+
+
+#SinglePostPage>figure>canvas {
+	width: 32px;
+	height: 32px;
+	background: white;
+	outline: 1px solid black;
+}
+
+#SinglePostPage>figure {
+	display: grid;
+	column-gap: 8px;
+	grid-template-columns: 32px auto 72px;
+	align-items:center;
+	padding-left: 8px;
+	padding-top: 8px;
+}
+
+#SinglePostPage>figure>figcaption {
+	height: min-content;
+	align-self: center;
+	font-weight: bold;
+	margin: 0;
+}
+#SinglePostPage>figure>div {
+	height:min-content;
+}
+#SinglePostPage>figure>div>i{
+	padding-right:8px;
+}
+#SinglePostPage>span {
+	padding-left:8px;
 	text-align:center;
-	font-size:18px;
+	font-size:14px;
 }
-.dark .ContextPost > div > button {
-	color:var(--DarkPostText);
+#SinglePostPage>h2 {
+	padding-top:8px;
+	font-weight:normal;
+	text-align: center;
 }
+#SinglePostPage>canvas {
+	width: 100%;
+	/* width:256px;
+	height:192px; */
+	background: white;
+	outline: 1px solid black;
+	/* padding:0;	 */
+	/* margin:8px;; */
+
+}
+
+/* 
+#SinglePostPage>div:last-of-type {
+	display: grid;
+	grid-template-columns: 48px auto 48px;
+	padding: 8px;
+}
+
+#SinglePostPage>div:last-of-type>div>i {
+	padding-right: 8px;
+} */
+
+/* #endregion */
+/* #region End of feed */
+article.FeedEnd {
+	height: 35px;
+	padding-top: 10px;
+	text-align: center;
+	color: var(--LightPostText);
+}
+
+article.FeedEnd h1 {
+	font-weight: normal;
+}
+
+.dark article.FeedEnd {
+	color: var(--DarkPostText);
+}
+
 /* #endregion */

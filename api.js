@@ -65,7 +65,8 @@ const mysql = require("mysql");
 // const hashKey = crypto.generateKey("hmac",{length:64}); // generate a cryto key (because this is generated every time, I can this only being a temporary solution)
 const hashKey = "lorem ipsum";
 // const acceptedHost = "192.168.0.143"; // only non-resource requests coming from here can be used.
-const acceptedHost = "localhost";
+const acceptedHost = "localhost:3000";
+const serverHost = "localhost";
 
 const sslOptions = {
 	key: fs.readFileSync("site/config/ssl/localhost.decrypted.key"),
@@ -223,7 +224,7 @@ class CRUD { // class to access the database
 					})
 				});
 				await new Promise((resolve) => {
-					query = "SELECT posts.ID, posts.GroupID, posts.Text, posts.Drawing, posts.CreationDate, posts.IsSpoiler, posts.IsNSFW, count(replies.ID) as ReplyCount FROM posts INNER JOIN posts as replies ON replies.ReplyToID = posts.ID INNER JOIN users ON users.ID = posts.UserID AND posts.UserID = '" + ID + "' AND posts.IsDisabled != 1 ORDER BY CreationDate DESC LIMIT 3;";
+					query = "SELECT posts.ID, posts.GroupID, posts.Text, hex(posts.Drawing), posts.CreationDate, posts.IsSpoiler, posts.IsNSFW, count(replies.ID) as ReplyCount FROM posts INNER JOIN posts as replies ON replies.ReplyToID = posts.ID INNER JOIN users ON users.ID = posts.UserID AND posts.UserID = '" + ID + "' AND posts.IsDisabled != 1 ORDER BY CreationDate DESC LIMIT 3;";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
@@ -284,7 +285,7 @@ class CRUD { // class to access the database
 		await new Promise((resolve) => {
 			databasePool.getConnection(function (err, connection) {
 				if (err) throw err;
-				let query = "SELECT posts.ID as PostID, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.UserID = '" + ID + "' AND posts.IsDisabled !=1;";
+				let query = "SELECT posts.ID as PostID, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.UserID = '" + ID + "' AND posts.IsDisabled !=1;";
 				connection.query(query, function (err, result) {
 					$(terminal.note + terminal.indent + query);
 					if (err) throw err;
@@ -302,7 +303,7 @@ class CRUD { // class to access the database
 		await new Promise((resolve) => {
 			databasePool.getConnection(function (err, connection) {
 				if (err) throw err;
-				let query = "SELECT posts.ID as PostID, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.GroupID = '" + ID + "' AND posts.IsDisabled !=1;";
+				let query = "SELECT posts.ID as PostID, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.GroupID = '" + ID + "' AND posts.IsDisabled !=1;";
 				connection.query(query, function (err, result) {
 					$(terminal.note + terminal.indent + query);
 					if (err) throw err;
@@ -345,7 +346,7 @@ class CRUD { // class to access the database
 					})
 				});
 				await new Promise((resolve) => {
-					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon, posts.Text as PostText, posts.Drawing as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ReplyToID = '" + ID + "';";
+					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ReplyToID = '" + ID + "';";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
@@ -364,6 +365,27 @@ class CRUD { // class to access the database
 			replies: postReplies,
 
 		}
+	}
+	async GetExplore() {
+		let posts = {};
+		let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon,posts.ID as PostID, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 and posts.ReplyToId == null;";
+		await new Promise((resolve) => {
+			databasePool.getConnection(async function (err, connection) {
+				if (err) throw err;
+				await new Promise((resolve) => {
+					connection.query(query, function (err, result) {
+						$(terminal.note + terminal.indent + query);
+						if (err) throw err;
+						posts = result;
+						resolve ();
+					});
+				});
+				connection.release ();
+				resolve ();
+			});
+		});
+		// $(posts);
+		return posts;
 	}
 	// GetUser
 }
@@ -403,7 +425,7 @@ async function IndexProcess(req, res) {
 	}
 	//#region print general request info
 	$(terminal.note + "------------------------------------------------------------");
-	$(terminal.info + "New " + req.method + " request from " + req.headers["origin"] + " (" + req.headers["user-agent"] + ")");
+	$(terminal.info + "New " + req.method + " request from " + req.headers["host"] + " (" + req.headers["user-agent"] + ")");
 	$(terminal.note + terminal.indent + "IP: " + req.connection.remoteAddress);
 	$(terminal.note + terminal.indent + "URL: " + req.url);
 	$(terminal.note + terminal.indent + "Time: " + new Date(Date.now()).toString());
@@ -462,16 +484,8 @@ async function IndexProcess(req, res) {
 		fs.writeFileSync(accessPath + req.connection.remoteAddress, Date.now().toString()); // create a new file with the time of access
 	}
 	//#endregion
-	//#region only accept some methods
-	// if (/^(GET|POST|DELETE|UPDATE)$/i.test(req.method) == false) {
-	// 	$(terminal.danger + "Request is not a GET or POST");
-	// 	// send a 405
-	// 	return Stop(405);
-	// 	// return Stop (501);
-	// }
-	//#endregion
 	//#region origin blocking
-	if (req.headers["origin"] != acceptedHost) { // if coming from terminal (and sketchy user forgets the origin), or coming from a fake website, block the request and send a 401
+	if (req.headers["host"] != acceptedHost) { // if coming from terminal (and sketchy user forgets the origin), or coming from a fake website, block the request and send a 401
 		$(terminal.danger + "Request is not from an acceptable host");
 		return Stop(403);
 	}
@@ -517,15 +531,16 @@ async function IndexProcess(req, res) {
 		verifyUserAccount: 3,
 		resetPassword: 4,
 		getUser: 5,
+		explorePosts: 6, // /api/post/
 		// /api/post/{id}
-		readPost: 6,
-		createPost: 7,
-		deletePost: 8,
-		updatePost: 9,
+		readPost: 7,
+		createPost: 8,
+		deletePost: 9,
+		updatePost: 10,
 		// /api/post/user/{id}
-		getUserPosts: 10,
+		getUserPosts: 11,
 		// /api/post/groups/{id}
-		getGroupPosts: 11
+		getGroupPosts: 12
 	}
 	let action = -1;
 	let wrongMethod = false; // just so that we only do Stop(405) once instead of in every case, otherwise we'll have double the lines cause of $
@@ -562,6 +577,11 @@ async function IndexProcess(req, res) {
 	// 	if(req.method=="POST") action=actions.changePassword;
 	// 	else wrongMethod = true; //return Stop(405);
 	// } - worry about these later
+	$(req.url);
+	if (req.url == "/api/post/") {
+		if (req.method == "GET") action = actions.explorePosts;
+		else wrongMethod = true;
+	}
 	if (/^\/api\/post\/[a-f0-9]{20}\/$/.test(req.url)) { // /api/post/{id}
 		actionIndex = req.url.slice(-21, -1); //get the post ID from the url
 		if (req.method == "POST") action = actions.createPost;
@@ -584,6 +604,7 @@ async function IndexProcess(req, res) {
 		$(terminal.danger + "Requested action exists, but method was incorrect");
 		return Stop(405); // method not allowed
 	}
+	$(action);
 	if (action == -1) {
 		$(terminal.danger + "Requested action does not exist, wrong method or link")
 		return Stop(404);
@@ -830,6 +851,20 @@ async function IndexProcess(req, res) {
 		return Stop(200); // the user has been found 
 	}
 	//#endregion
+	//#region /post/ get explore (all posts for now)
+	if (action == actions.explorePosts) {
+		$(terminal.info + "Selected action: Explore posts");
+		let result = await crud.GetExplore();
+		if (result === undefined || result.length == 0) { // if the post was not found, or slq error happened
+			$(terminal.danger + "No Posts were found")
+			return Stop(404, "POST_NOT_FOUND");
+		}
+		$(terminal.success + "Posts were found")
+		res.write(JSON.stringify(result));
+		return Stop(200);
+	}
+	//#endregion
+	//#region /post/{id} get post
 	if (action == actions.readPost) {
 		$(terminal.info + "Selected action: Get post");
 		let result = await crud.GetPost(actionIndex);
@@ -845,6 +880,8 @@ async function IndexProcess(req, res) {
 		}));
 		return Stop(200);
 	}
+	//#endregion
+	//#region /post/user/{id} get user's posts
 	if (action == actions.getUserPosts) {
 		$(terminal.info + "Selected action: Get user's posts");
 		$(actionIndex);
@@ -861,6 +898,8 @@ async function IndexProcess(req, res) {
 		return Stop(200);
 
 	}
+	//#endregion
+	//#region /post/group/{id}
 	if (action == actions.getGroupPosts) {
 		$(terminal.info + "Selected action: Get user's posts");
 		$(actionIndex);
@@ -877,7 +916,9 @@ async function IndexProcess(req, res) {
 		return Stop(200);
 
 	}
+	//#endregion
+	return Stop(400);
 }
 
 // server.listen(3000, '192.168.0.143');
-server.listen(3000, acceptedHost);
+server.listen(3000, serverHost);
