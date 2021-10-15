@@ -2,7 +2,158 @@ function $(ID) { // I always thought the $ used in jquery was some magic thing, 
 	return document.getElementById(ID);
 }
 
-function ToggleDarkKey(me, event = new KeyboardEvent()) {
+class Post { // store posts inside a class, makes it easier to use
+	// if isReply, slightly change the layout to put the comment count on the right next to the username, and remove the favourites star
+	constructor(parent, isReply, userID, userUsername, userData, postID, postData, postIsSpoiler, postIsNSFW, postDate, commentCount) {
+		this.isReply = isReply;
+		let me = this;
+		this.user = {
+			ID: userID,
+			username: userUsername,
+			data: userData,
+		};
+		this.post = {
+			ID: postID,
+			commentCount: commentCount,
+			favouriteCount: 0,
+			data: postData,
+			isSpoiler: postIsSpoiler,
+			isNSFW: postIsNSFW,
+			date: postDate
+		};
+	}
+	render () {
+		this.mainElement = document.createElement("article");
+		if (this.isReply) {
+			this.mainElement.className = "ReplyPost";
+		} else {
+			this.mainElement.className = "ContextPost";
+		}
+		this.canvasHolder = document.createElement("div");
+		this.canvas = document.createElement("canvas");
+		if (this.post.isNSFW || this.post.isSpoiler) {
+			this.canvas.className = "Blur";
+			// this.canvasCensor
+			this.canvasCensorButton = document.createElement("button");
+			if (this.post.isNSFW) { // need to think about what it would say if its nsfw and a spoiler, or if there should just be 2 seperate censors
+				this.canvasCensorButton.innerHTML = "NSFW";
+			} else {
+				this.canvasCensorButton.innerHTML = "Spoiler";
+			}
+			this.canvasCensorButton.addEventListener("click", function () { // clicking on the button in the middle of the canvas
+				me.canvas.className = "";
+				me.canvasCensorButton.remove();
+				if (!this.isReply) {
+					me.canvas.addEventListener('click', function () {
+						OpenPost(me); // open the single page view of the post, but only after the user has accepted they want to see a spolier or nsfw stuff
+					});
+				}
+			})
+			this.canvasHolder.append(this.canvasCensorButton);
+		} else if (!this.isReply) {
+			me.canvas.addEventListener('click', function () {
+				OpenPost(me); // open the single page view of the post
+			});
+		}
+		if (isReply) {
+			this.canvas.width = 196;
+			this.canvas.height = 144;
+		} else {
+			this.canvas.width = 256;
+			this.canvas.height = 196;
+		}
+		this.userFigure = document.createElement("figure");
+
+		this.username = document.createElement("figcaption");
+		this.username.innerHTML = this.user.username;
+		this.userIconCanvas = document.createElement("canvas");
+		this.userIconCanvas.width = 64;
+		this.userIconCanvas.height = 64;
+
+		this.extraButton = document.createElement("button");
+		this.extraButton.addEventListener("click", function () {
+			// bring up the menu to report the post
+		});
+		this.extraButton.innerHTML = "<i class='bi bi-three-dots'></i>";
+
+
+		this.numbersDiv = document.createElement("div");
+		if (!this.isReply) { // for now I don't want to have replies to replies, but due to a lack of text you can't really mention a user without having it be nested. further considerations for later
+			this.commentsDiv = document.createElement("div");
+			this.commentsDiv.innerHTML += `<i class='bi bi-chat-square'></i><span>${this.post.commentCount}</span>`
+			this.numbersDiv.append(this.commentsDiv);
+		}
+		this.favouritesDiv = document.createElement("div");
+		this.favouritesDiv.innerHTML += `<i class='bi bi-star'></i><span>${this.post.favouriteCount}</span>`;
+		this.favouritesDiv.addEventListener("click", function () {
+			//this function is to add a post to the user's favourites, which is yet to be implemented on the databaes
+		});
+
+		this.numbersDiv.append(this.favouritesDiv);
+
+		this.userFigure.append(this.userIconCanvas);
+		this.userFigure.append(this.username);
+
+		this.canvasHolder.append(this.canvas);
+		this.mainElement.append(this.canvasHolder);
+		this.mainElement.append(this.userFigure);
+
+		this.userFigure.append(this.numbersDiv);
+
+		parent.append(this.mainElement);
+		if (this.isReply) this.imageData = renderImage(this.canvas, this.post.data, 192, 144); // render the image
+		else this.imageData = renderImage(this.canvas, this.post.data, 256, 192); // render the image
+
+		this.parent = parent;
+	}
+	remove() {
+		this.mainElement.remove();
+	}
+
+}
+class Group { // making these classes with their render functions makes me appreciate what react and stuff aim to do, because this can get a bit tedious
+	constructor(groupID, groupName, groupData, groupDescription, groupDate, userID, userUsername, userData) {
+		let me = this;
+		this.group = {
+			ID: groupID,
+			name: groupName,
+			data: groupData,
+			description: groupDescription,
+			date: groupDate,
+			user: {
+				ID: userID,
+				username: userUsername,
+				data: userData
+			}
+		};
+	}
+	render(parent) { // render this element into a parent, creating every html object. Doing this is the reason why a layout framework wasn't used, cause I save time having to add classnames (I guess having so much css would balance that out, but it gives me total control)
+		// this only renders the small block used for single posts and the groups page
+		this.mainElement = document.createElement("figure");
+
+		this.nameElement = document.createElement("figcaption");
+		this.nameElement.innerHTML = this.group.name;
+
+		this.canvas = document.createElement("canvas");
+		this.canvas.width = 96;
+		this.canvas.height = 96;
+
+		this.mainElement.append(this.canvas);
+		this.mainElement.append(this.nameElement);
+		this.mainElement.addEventListener('click', function () {
+			OpenGroup(me) // opens the single page view of the group
+		});
+		// this.mainElement.
+		parent.append(this.mainElement);
+
+		this.imageData = renderImage(this.canvas, this.group.data, 96, 96);
+	}
+	remove() {
+		this.mainElement.remove();
+	}
+}
+
+function ToggleDarkKey(me, event = new KeyboardEvent()) { // just for debugging, toggle the theme when d is pressed
 	// let me = event.target;
 	if (event.key == 'd') {
 		if (me.className == "dark") {
@@ -13,16 +164,31 @@ function ToggleDarkKey(me, event = new KeyboardEvent()) {
 	}
 }
 
+function test() {
+	console.log('test');
+}
 
-const pageNames = [
-	"Explore",
-	"Groups",
-	"Draw",
-	"Friends"
+const pages = [{
+		name: "Explore",
+		func: ExplorePage
+	},
+	{
+		name: "Groups",
+		func: test
+	},
+	{
+		name: "Draw",
+		func: test
+	},
+	{
+		name: "Friends",
+		func: test
+	}
 ]
 
 function TabbarPage(index, me) {
-	$("PageIntro").innerHTML = pageNames[index];
+	$("PageIntro").innerHTML = pages[index].name;
+	pages[index].func(); // should call the function
 	$("PageIntro").className = "";
 	for (let i = 0; i < 4; i++) {
 		let child = $("TabbarIcons").children[i];
@@ -47,156 +213,45 @@ function TabbarPage(index, me) {
 	}, 1000)
 }
 
-
-class Post {
-	// if isReply, slightly change the layout to put the comment count on the right next to the username, and remove the favourites star
-	constructor(parent, isReply, userID, userUsername, userData, postID, postData, postIsSpoiler, postIsNSFW) {
-
-		let me = this;
-		this.user = {
-			ID: userID,
-			username: userUsername,
-			data: userData,
-		};
-		this.post = {
-			ID: postID,
-			commentCount: 100,
-			favouriteCount: 100,
-			// text: postText,
-			data: postData,
-			isSpoiler: postIsSpoiler,
-			isNSFW: postIsNSFW
-		};
-
-		this.mainElement = document.createElement("article");
-		this.mainElement.className = "ContextPost";
-
-		this.canvasHolder = document.createElement("div");
-		this.canvas = document.createElement("canvas");
-		if (this.post.isNSFW || this.post.isSpoiler) {
-			this.canvas.className = "Blur";
-			this.canvasCensor = document.createElement("div");
-			// this.canvasCensor
-			this.canvasCensorLabel = document.createElement("h1");
-			if (this.post.isNSFW) {
-				this.canvasCensorLabel.innerHTML = "This post is marked as NSFW";
-			} else {
-				this.canvasCensorLabel.innerHTML = "This post is marked as a spoiler";
-			}
-			this.canvasCensorButton = document.createElement("button");
-			this.canvasCensorButton.innerHTML = "View anyways";
-			this.canvasCensorButton.addEventListener("click", function () {
-				me.canvas.className = "";
-				me.canvasCensor.remove();
-				me.canvas.addEventListener('click', function () {
-					OpenPost(me)
-				});
-			})
-			this.canvasCensor.append(this.canvasCensorLabel);
-			this.canvasCensor.append(this.canvasCensorButton);
-			this.canvasHolder.append(this.canvasCensor);
-		} else {
-			me.canvas.addEventListener('click', function () {
-				OpenPost(me)
-			});
-		}
-		if (isReply) {
-			this.canvas.width = 196;
-			this.canvas.height = 144;
-		} else {
-			this.canvas.width = 256;
-			this.canvas.height = 196;
-		}
-		this.userFigure = document.createElement("figure");
-
-		this.username = document.createElement("figcaption");
-		this.username.innerHTML = this.user.username;
-		this.userIconCanvas = document.createElement("canvas");
-		this.userIconCanvas.width = 64;
-		this.userIconCanvas.height = 64;
-
-		this.extraButton = document.createElement("button");
-		this.extraButton.addEventListener("click", function () {
-			console.log('more button')
-		});
-		this.extraButton.innerHTML = "<i class='bi bi-three-dots'></i>";
-
-		this.postText = document.createElement("p");
-		this.postText.innerHTML = this.post.text;
-
-
-		this.numbersDiv = document.createElement("div");
-		this.commentsDiv = document.createElement("div");
-		this.commentsDiv.innerHTML += `<i class='bi bi-chat-square'></i><span>${this.post.commentCount}</span>`
-		this.commentsDiv.addEventListener('click', function () {
-
-		})
-		this.favouritesDiv = document.createElement("div");
-		this.favouritesDiv.innerHTML += `<i class='bi bi-star'></i><span>${this.post.favouriteCount}</span>`;
-		this.favouritesDiv.addEventListener("click", function () {
-			console.log("eeeee")
-		});
-
-		this.numbersDiv.append(this.commentsDiv);
-		this.numbersDiv.append(this.favouritesDiv);
-
-		this.userFigure.append(this.userIconCanvas);
-		this.userFigure.append(this.username);
-
-		this.canvasHolder.append(this.canvas);
-		// if (this.post.data != null) {
-			this.mainElement.appendChild(this.canvasHolder);
-			this.renderImage()
-		// }
-		this.mainElement.appendChild(this.userFigure);
-		if (this.post.text != "" && this.post.text != null) {
-			this.mainElement.append(this.postText);
-		}
-		this.mainElement.append(this.numbersDiv);
-		this.postText.addEventListener('click', function () {
-			OpenPost(me);
-		})
-
-
-
-		parent.append(this.mainElement);
-	}
-	renderImage() {
-		let context = this.canvas.getContext("2d");
-		let imageData = context.createImageData(256, 196);
-		context.imageSmoothingEnabled = false;
-		context.webkitImageSmoothingEnabled = false;
-		context.mozImageSmoothingEnabled = false;
-		context.msImageSmoothingEnabled = false;
-		context.oImageSmoothingEnabled = false;
-
-		let cursor = 0;
-		for (let i = 0; i < this.post.data.length; i += 3) {
-			let colour = parseInt("0x" + this.post.data[i], 16);
-			let duration = parseInt("0x" + this.post.data[i + 1] + this.post.data[i + 2], 16);
-			for (let d = 0; d < duration; d++) {
-				imageData.data[cursor * 4] = colours[colour][1];
-				imageData.data[cursor * 4 + 1] = colours[colour][2];
-				imageData.data[cursor * 4 + 2] = colours[colour][3];
-				imageData.data[cursor * 4 + 3] = 255;
-				cursor += 1;
-				if (cursor > 256 * 196 && this.isReply) {
-					break;
-				} else if (cursor > 196 * 144 && this.isReply) {
-					break;
-				}
-			}
-
-			if (cursor > 256 * 196 && this.isReply) {
-				break;
-			} else if (cursor > 196 * 144 && this.isReply) {
-				break;
-			}
-
-		}
-		context.putImageData(imageData, 0, 0);
-	}
+function CloseAllPages() {
+	$("ExplorePage").hidden = true;
+	$("SinglePostPage").hidden = true;
+	$("SingleGroupPage").hidden = true;
 }
+
+function renderImage(canvas, data, width, height) {
+	let context = canvas.getContext("2d");
+	let imageData = context.createImageData(256, 196);
+	context.imageSmoothingEnabled = false;
+	context.webkitImageSmoothingEnabled = false;
+	context.mozImageSmoothingEnabled = false;
+	context.msImageSmoothingEnabled = false;
+	context.oImageSmoothingEnabled = false;
+
+	let cursor = 0;
+	for (let i = 0; i < data.length; i += 3) {
+		let colour = parseInt("0x" + data[i], 16);
+		let duration = parseInt("0x" + data[i + 1] + data[i + 2], 16);
+		for (let d = 0; d < duration; d++) {
+			imageData.data[cursor * 4] = colours[colour][1];
+			imageData.data[cursor * 4 + 1] = colours[colour][2];
+			imageData.data[cursor * 4 + 2] = colours[colour][3];
+			imageData.data[cursor * 4 + 3] = 255;
+			cursor += 1;
+			if (cursor > width * height) {
+				break;
+			}
+		}
+
+		if (cursor > width * height) {
+			break;
+		}
+
+	}
+	context.putImageData(imageData, 0, 0);
+	return imageData;
+}
+
 const colours = [
 	["black", 00, 00, 00],
 	["white", 255, 255, 255],
@@ -217,37 +272,91 @@ const colours = [
 	["dark violet", 0, 96, 96],
 ]
 
-var posts = [
+var explorePosts = []
 
-]
-
-async function RefreshExplore() {
+function ExplorePage() { // at the moment this is just selects a bit of data from all posts, but in the future this will filter based on the users preferences
+	for (let i = 0; i < explorePosts.length;i++) {
+		explorePosts[i].remove() // remove existing html
+	}
+	explorePosts = [];
+	CloseAllPages()
+	$("ExplorePage").hidden = false;
 	$("ExplorePageLoading").hidden = false;
-	let request = await fetch("https://localhost:3000/api/post/", {
+	fetch("https://localhost:3000/api/post/", {
 		method: "GET"
-	});
-	// console.log(request.status);
-	let json = await request.json();
-	$("ExplorePageLoading").hidden = true;
-	for (let i = 0; i < json.length; i++) {
-		posts.push(new Post($("ExplorePage"), false, json[i]["UserID"], json[i]["UserDisplayName"], json[i]["UserDisplayIcon"], json[i]["PostID"], json[i]["PostDrawing"], json[i]["PostIsSpoiler"], json[i]["PostIsNSFW"]));
-	}
+	}).then((response) => response.json()).then((data) => {
+		$("ExplorePageLoading").hidden = true;
+		for (let i = 0; i < data.length; i++) {
+			let newPost = new Post(false, data[i]["UserID"], data[i]["UserDisplayName"], data[i]["UserDisplayIcon"], data[i]["PostID"], data[i]["PostDrawing"], data[i]["PostIsSpoiler"], data[i]["PostIsNSFW"], data[i]["PostCreateTime"], data[i]["ReplyCount"]);
+			newPost.render($("ExplorePage"));
+			explorePosts.append(newPost);
+		}
+	}).catch();
 
 }
-RefreshExplore();
 
-var currentPostReplies = []
-async function OpenPost(post) {
+let currentSinglePostReplies = [];
+
+function OpenPost(post) {
+	if (post.isReply) {
+		return null
+	}
+	for (let i = 0; i < currentSinglePostReplies.length; i++) {
+		currentSinglePostReplies[i].remove();
+	}
+	currentSinglePostReplies = [];
+	CloseAllPages();
 	$("SinglePostPage").hidden = false;
-	$("ExplorePage").hidden = true;
 	$("SinglePostCommentsLoading").hidden = false;
-	let request = await fetch("https://localhost:3000/api/post/" + post.post.ID + "/", {
+	$("SinglePostDate").innerHTML = new Date(post.post.date * 1000).toLocaleDateString("en-GB");
+	$("SinglePostUsername").innerHTML = post.user.username;
+	$("SinglePostCanvas").getContext("2d").putImageData(post.imageData, 0, 0);
+	// $("SinglePostGroupHolder").innerHTML = ""; // in case all the replies's html wasnt cleared, finish the job
+	// ^ ignore this, I forgot that the loading stuff is in the same div, so we just have to hope that the class can remove it's own html
+	$("SinglePostCommentsHeader").innerHTML = post.post.commentCount + " Replies";
+	if (post.post.commentCount == 1) $("SinglePostCommentsHeader").innerHTML = post.post.commentCount + "Reply"; // grammar
+	fetch("https://localhost:3000/api/post/" + post.post.ID + "/", { // in the future, instead of sending an object with all of the posts that includes their data, send an array like ['0123', '4567', 'etc'] that the server can fetch for each post individually - or in sections - instead of all at once
 		method: "GET"
-	});
-	let json = await request.json();
-	console.log(json);
-	$("SinglePostCommentsLoading").hidden = true;
-	for (let i = 0; i < json.replies.length; i++) {
-		currentPostReplies.push(new Post($("SinglePostComments"), true, json.replies[i]["UserID"], json.replies[i]["UserDisplayName"], json.replies[i]["UserDisplayIcon"], json.replies[i]["PostID"], json.replies[i]["PostDrawing"], json.replies[i]["PostIsSpoiler"], json.replies[i]["PostIsNSFW"]))
-	}
+	}).then(response => response.json()).then((data) => { // the usual fetch json
+		$("SinglePostCommentsLoading").hidden = true;
+		let group = new Group($("SinglePostGroupHolder"), data.group[0]["GroupID"], data.group[0]["GroupDisplayName"], data.group[0]["GroupDisplayIcon"], data.group[0]["GroupDescription"], data.group[0]["GroupDate"], data.group[0]["UserID"], data.group[0]["UserDisplayName"], data.group[0]["UserDisplayIcon"]); // the little group icon with the groupname
+		for (let i = 0; i < data.replies.length; i++) {
+			let reply = new Post(true, data.replies[i]["UserID"], data.replies[i]["UserDisplayName"], data.replies[i]["UserDisplayIcon"], data.replies[i]["PostID"], data.replies[i]["PostDrawing"], data.replies[i]["PostIsSpoiler"], data.replies[i]["PostIsNSFW"]); // the replies to the post
+			reply.render($("SinglePostComments"));
+			currentSinglePostReplies.append(reply); // there isnt a 100% reason that these posts are inside an array, considering this array isn't accessed... might need to rethink
+		}
+	}).catch(
+		//couldn't connect to server
+	);
+
+	// let group = new Group($("SinglePostGroupHolder"), post.group.ID, post.group.name, post.group.data, post.group.description, post.group.date, post.group.user
 }
+
+let currentSingleGroupPosts = [];
+
+function OpenGroup(group) {
+	for (let i = 0; i < currentSingleGroupPosts.length; i++) {
+		currentSingleGroupPosts[i].remove();
+	};
+	currentSingleGroupPosts = [];
+	CloseAllPages();
+
+	$("SingleGroupPage").hidden = false;
+	$("SingleGroupPostsLoading").hidden = false;
+	$("SingleGroupName").innerHTML = group.group.name;
+	renderImage($("SingleGroupCanvas"), group.group.data, 96, 96);
+	fetch("https://localhost:3000/api/post/group/" + group.group.ID + "/", {
+		method: "GET"
+	}).then((response) => response.json()).then((data) => {
+		$("SingleGroupPostLoading").hidden = true;
+		for (let i = 0; i < data.length; i++) {
+			currentSingleGroupPosts.push(new Post($("SingleGroupPosts"), false, data[i]["UserID"], data[i]["UserDisplayName"], data[i]["UserDisplayIcon"], data[i]["PostID"], data[i]["PostDrawing"], data[i]["PostIsSpoiler"], data[i]["PostIsNSFW"], data[i]["PostCreateTime"], data[i]["ReplyCount"]));
+		}
+	}).catch()
+}
+
+
+// add a page history with the type of content adn the ID ? maybe a list of functions?
+// [OpenPost('abdabsdsadsad'), Opengroup('absdbasbdbsd')] etc ect
+// go back by -1 when using the back arrow
+// lets hope that works gotta go to work now

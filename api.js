@@ -303,7 +303,8 @@ class CRUD { // class to access the database
 		await new Promise((resolve) => {
 			databasePool.getConnection(function (err, connection) {
 				if (err) throw err;
-				let query = "SELECT posts.ID as PostID, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.GroupID = '" + ID + "' AND posts.IsDisabled !=1;";
+				// let query = "SELECT posts.ID as PostID, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.GroupID = '" + ID + "' AND posts.ReplyToID IS NULL AND posts.IsDisabled !=1;";
+				let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon, users.DisplayBio as UserBio,posts.ID as PostID, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW, posts.CreationDate as PostCreateTime, count(replies.ID) as ReplyCount FROM posts LEFT JOIN posts AS replies ON replies.ReplyToID = posts.ID INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 and posts.ReplyToId IS NULL AND posts.GroupID = '"+ID+"' GROUP BY posts.ID;";
 				connection.query(query, function (err, result) {
 					$(terminal.note + terminal.indent + query);
 					if (err) throw err;
@@ -325,7 +326,7 @@ class CRUD { // class to access the database
 				if (err) throw err;
 				await new Promise((resolve) => {
 					// so heres a doozy. sending the raw data to json converts it all to numbers and adds ',' and \n's to it, and makes it larger(69.3kb) than if we send as a string converted to hex(39.6kb). both of these methods are still larger than the original file, which is only 19.7kb. We might as well send it as a string of hex
-					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon,posts.ID as PostID, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ID = '" + ID + "';";
+					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon,posts.ID as PostID, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW, posts.CreationDate as PostCreateTime FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ID = '" + ID + "';";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
@@ -336,7 +337,7 @@ class CRUD { // class to access the database
 					});
 				});
 				await new Promise((resolve) => {
-					let query = "SELECT groups.ID as GroupID, groups.DisplayName as GroupDisplayName, groups.DisplayIcon as GroupDisplayIcon FROM posts INNER JOIN groups ON posts.GroupID = groups.ID WHERE posts.ID = '" + ID + "';";
+					let query = "SELECT groups.ID as GroupID, groups.DisplayName as GroupDisplayName, hex(groups.DisplayIcon) as GroupDisplayIcon, groups.description as GroupDescription, users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon FROM posts INNER JOIN groups ON groups.ID = posts.GroupID INNER JOIN users ON users.ID = groups.OwnerID WHERE posts.ID = '" + ID + "'";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
@@ -346,7 +347,7 @@ class CRUD { // class to access the database
 					})
 				});
 				await new Promise((resolve) => {
-					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ReplyToID = '" + ID + "';";
+					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ReplyToID = '" + ID + "' ORDER BY posts.CreationDate DESC;";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
@@ -368,7 +369,7 @@ class CRUD { // class to access the database
 	}
 	async GetExplore() {
 		let posts = {};
-		let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon,posts.ID as PostID, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 and posts.ReplyToId == null;";
+		let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon, users.DisplayBio as UserBio,posts.ID as PostID, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW, posts.CreationDate as PostCreateTime, count(replies.ID) as ReplyCount FROM posts LEFT JOIN posts AS replies ON replies.ReplyToID = posts.ID INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 and posts.ReplyToId IS NULL GROUP BY posts.ID;";
 		await new Promise((resolve) => {
 			databasePool.getConnection(async function (err, connection) {
 				if (err) throw err;
@@ -377,16 +378,17 @@ class CRUD { // class to access the database
 						$(terminal.note + terminal.indent + query);
 						if (err) throw err;
 						posts = result;
-						resolve ();
+						resolve();
 					});
 				});
-				connection.release ();
-				resolve ();
+				connection.release();
+				resolve();
 			});
 		});
 		// $(posts);
 		return posts;
 	}
+
 	// GetUser
 }
 var crud = new CRUD();
@@ -469,10 +471,10 @@ async function IndexProcess(req, res) {
 		} else {
 			accessToday = 0;
 		}
-		if (accessToday > 1000) {
-			$(terminal.danger + "More than 1000 accesses today");
-			return Stop(429);
-		}
+		// if (accessToday > 1000) { // turn this off while I work on the UX2 
+		// 	$(terminal.danger + "More than 1000 accesses today");
+		// 	return Stop(429);
+		// }
 		fs.writeFileSync(accessPath + req.connection.remoteAddress, Date.now().toString() + "\n" + accessToday); // update the last access time in the file, we do this before checking the time otherwise the requester can still squeeze 1 request in
 		if (Date.now() - access < 1000) { // the user has requested multiple times in the span of 1 seconds
 			$(terminal.danger + "Last access was less than a second ago"); // 1000 milliseconsd is 1 second, if the time+1000 is less time, it means a second has not yet psased 

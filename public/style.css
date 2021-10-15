@@ -7,6 +7,8 @@
 	/* --Primary: #66cc99; */
 	/* --Primary:#eb7d73; */
 	--Primary: #70a534;
+	/* --Primary:#b424d1; */
+	/* --Primary:#dfb52e; */
 	--LightBar: #f1f1f1;
 	/*linear-gradient(0deg, rgb(61, 226, 255), rgb(122, 255, 215));*/
 	--DarkBar: #333;
@@ -35,6 +37,7 @@
 	outline: none;
 	border: none;
 	font-family: 'Nova Mono', monospace;
+	/* font-family:'Helvetica'; */
 	font-size: 16px;
 }
 
@@ -43,6 +46,7 @@ canvas {
 }
 
 body {
+	min-width: 300px;
 	display: grid;
 	grid-template-rows: 36px auto 36px;
 	height: 100vh;
@@ -238,13 +242,20 @@ footer li:nth-of-type(5) {
 }
 
 #ExplorePageLoading,
-#SinglePostCommentsLoading {
+#SinglePostCommentsLoading,
+#SingleGroupPostsLoading {
 	width: 100%;
 	padding-top: 32px;
+	padding-bottom: 32px;
 	color:var(--BarMutedColor);
 }
+#SinglePostCommentsLoading,
+#SingleGroupPostsLoading {
+	padding-top:0;
+}
 #ExplorePageLoading>div,
-#SinglePostCommentsLoading>div {
+#SinglePostCommentsLoading>div,
+#SingleGroupPostsLoading>div {
 	border:1px solid var(--BarMutedColor);
 	border-radius:50%;
 	width:42px;
@@ -254,7 +265,8 @@ footer li:nth-of-type(5) {
 
 }
 #ExplorePageLoading i,
-#SinglePostCommentsLoading i {
+#SinglePostCommentsLoading i,
+#SingleGroupPostsLoading i {
 	display: block;
 	margin: auto;
 	animation:1s loading infinite linear;
@@ -269,16 +281,15 @@ footer li:nth-of-type(5) {
 }
 
 #ExplorePageLoading h2,
-#SinglePostCommentsLoading h2 {
+#SinglePostCommentsLoading h2,
+#SingleGroupPostsLoading h2 {
 	font-weight: normal;
 	text-align: center;
-	;
 }
 
 /*#region context-level post (has the basic info about the post, but not the comments, groups or time posted) */
 .ContextPost {
-	margin-left: auto;
-	margin-right: auto;
+	margin: auto;
 	margin-bottom: 8px;
 	background: var(--LightPostBackground);
 	box-sizing: border-box;
@@ -300,22 +311,6 @@ footer li:nth-of-type(5) {
 	color: var(--DarkPostText);
 }
 
-.ContextPost>button {
-	position: absolute;
-	/* top: 8px; */
-	transform: translateY(-27px);
-	right: 8px;
-	/* font-size: 20px; */
-	color: var(--BarMutedColor);
-}
-
-.ContextPost>p {
-	padding: 8px;
-	line-height: 24px;
-	max-height: 66px;
-	overflow: hidden;
-}
-
 .ContextPost * {
 	/* outline:solid black 1px;  */
 	margin: 0;
@@ -323,18 +318,24 @@ footer li:nth-of-type(5) {
 }
 
 .ContextPost>figure>canvas {
-	width: 32px;
-	height: 32px;
+	width: 48px;
+	height: 48px;
 	background: white;
 	outline: 1px solid black;
 }
 
 .ContextPost>figure {
 	display: grid;
+	align-items:center;
 	column-gap: 8px;
-	grid-template-columns: 32px auto;
-	padding-left: 8px;
-	padding-top: 8px;
+	grid-template-columns: 48px auto 80px;
+	padding: 8px;
+}
+.ContextPost>figure>div {
+	height:min-content;
+}
+.ContextPost>figure>div>div>i {
+	padding-right:8px;
 }
 
 .ContextPost>figure>figcaption {
@@ -344,25 +345,25 @@ footer li:nth-of-type(5) {
 	margin: 0;
 }
 
-.ContextPost>div:first-of-type:not(.ContextPost>div:last-of-type)>canvas {
+.ContextPost>div {
+	overflow: hidden;
+	position: relative;
+	top: 0;
+	left: 0;
+	outline:1px solid black;
+}
+.ContextPost>div>canvas {
 	width: 100%;
 	/* width:256px;
 	height:192px; */
-	background: white;
-	outline: 1px solid black;
+	background: white;	
 	/* padding:0;	 */
 	/* margin:8px;; */
 
 }
 
-.ContextPost>div:first-of-type:not(.ContextPost>div:last-of-type) {
-	overflow: hidden;
-	position: relative;
-	top: 0;
-	left: 0;
-}
 
-.ContextPost>div:first-of-type:not(.ContextPost>div:last-of-type)>div {
+.ContextPost>div>div {
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -372,23 +373,23 @@ footer li:nth-of-type(5) {
 
 }
 
-.ContextPost>div:first-of-type:not(.ContextPost>div:last-of-type)>div>button {
-	background: var(--Primary);
+.ContextPost>div>button {
+	position: absolute;
+	top:50%;
+	left:50%;
+	transform:translate(-50%,-50%);
+	background: var(--LightPostBackground);
+	color:var(--LightPostText);
 	padding: 4px;
 	border-radius: 10px;
-	margin-top: 20px;
-	outline: 1px solid var(--DarkBarSeperator);
-
+	/* margin-top: 20px; */
+	outline: 1px solid var(--LightBarSeperator);
+	z-index: 1;
 }
-
-.ContextPost>div:last-of-type {
-	display: grid;
-	grid-template-columns: auto auto;
-	padding: 8px;
-}
-
-.ContextPost>div:last-of-type>div>i {
-	padding-right: 8px;
+.dark .ContextPost>div>button {
+	background:var(--DarkPostBackground);
+	color:var(--DarkPostText);
+	outline:1px solid var(--DarkBarSeperator);
 }
 
 .ContextPost canvas.Blur {
@@ -397,74 +398,203 @@ footer li:nth-of-type(5) {
 }
 
 /* #endregion */
-/* #region detailed post */
-#SinglePostPage {
+/* #region reply post */
+.ReplyPost {
+	margin: 16px auto;
 	background: var(--LightPostBackground);
-	height:100%;
-	width: 100%;
+	box-sizing: border-box;
+	outline: 1px solid black;
+	position: relative;
+	top: 0;
+	left: 0;
+	max-width: 384px;
+	min-width: 144px;
+	width: 75%;
+}
+.ReplyPost:first-of-type{
+	margin-top:0;
 }
 
-.dark #SinglePostPage {
+.dark .ReplyPost {
 	background: var(--DarkPostBackground);
 	color: var(--DarkPostText);
 }
 
-#SinglePostPage>button {
-	position: absolute;
-	/* top: 8px; */
-	transform: translateY(-27px);
-	right: 8px;
-	/* font-size: 20px; */
-	color: var(--BarMutedColor);
+.ReplyPost * {
+	/* outline:solid black 1px;  */
+	margin: 0;
+	padding: 0;
 }
 
-#SinglePostPage>p {
-	padding: 8px;
-	line-height: 24px;
-	max-height: 66px;
-	overflow: hidden;
-}
-
-
-#SinglePostPage>figure>canvas {
+.ReplyPost>figure>canvas {
 	width: 32px;
 	height: 32px;
 	background: white;
 	outline: 1px solid black;
 }
 
-#SinglePostPage>figure {
+.ReplyPost>figure {
 	display: grid;
-	column-gap: 8px;
-	grid-template-columns: 32px auto 72px;
 	align-items:center;
-	padding-left: 8px;
-	padding-top: 8px;
+	column-gap: 8px;
+	grid-template-columns: 32px auto 70px;
+	padding: 8px;
+}
+.ReplyPost>figure>div {
+	height:min-content;
+}
+.ReplyPost>figure>div>div>i {
+	padding-right:8px;
 }
 
-#SinglePostPage>figure>figcaption {
+.ReplyPost>figure>figcaption {
 	height: min-content;
 	align-self: center;
 	font-weight: bold;
 	margin: 0;
 }
-#SinglePostPage>figure>div {
-	height:min-content;
+
+.ReplyPost>div {
+	overflow: hidden;
+	position: relative;
+	top: 0;
+	left: 0;
+	outline: 1px solid black;
 }
-#SinglePostPage>figure>div>i{
-	padding-right:8px;
+.ReplyPost>div>canvas {
+	width: 100%;
+	/* width:256px;
+	height:192px; */
+	background: white;
+	/* padding:0;	 */
+	/* margin:8px;; */
+	
 }
-#SinglePostPage>span {
-	padding-left:8px;
-	text-align:center;
-	font-size:14px;
+
+
+.ReplyPost>div>div {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 1;
+	text-align: center;
+	
 }
-#SinglePostPage>h2 {
-	padding-top:8px;
+
+.ReplyPost>div>button {
+	position: absolute;
+	top:50%;
+	left:50%;
+	transform:translate(-50%,-50%);
+	background: var(--LightPostBackground);
+	color:var(--LightPostText);
+	padding: 4px;
+	border-radius: 10px;
+	/* margin-top: 20px; */
+	outline: 1px solid var(--LightBarSeperator);
+	z-index: 1;
+}
+.dark .ReplyPost>div>button {
+	background:var(--DarkPostBackground);
+	color:var(--DarkPostText);
+	outline:1px solid var(--DarkBarSeperator);
+}
+
+.ReplyPost canvas.Blur {
+	filter: blur(14px);
+	overflow: hidden;
+}
+/* #endregion */
+/* #region single post */
+#SinglePostPage {
+	/* background: var(--LightPostBackground); */
+	height:100%;
+	width: 100%;
+}
+
+.dark #SinglePostPage {
+	/* background: var(--DarkPostBackground); */
+	color: var(--DarkPostText);
+}
+#SinglePostPage>div:nth-of-type(2) {
+	display:grid;
+	grid-template-columns: auto;
+	justify-content:center;
+	align-items:center;
+	padding-bottom:16px;
+}
+#SinglePostPage>div:nth-of-type(2)>h2 {
 	font-weight:normal;
 	text-align: center;
+	padding:16px;
+	/* padding-bottom:0; */
 }
-#SinglePostPage>canvas {
+#SinglePostPage>div:nth-of-type(2)>button {
+	display:block;
+	font-weight:normal;
+	text-align: center;
+	background:var(--Primary);
+	height:32px;
+	padding-left:16px;
+	padding-right:16px;
+	border-radius: 10px;
+	outline:1px solid var(--LightBarSeperator);
+
+	/* padding-bottom:0; */
+}
+.dark #SinglePostPage>div:nth-of-type(2)>button {
+	outline:1px solid var(--DarkBarSeperator);
+}
+
+
+#SinglePostPage>div:first-of-type {
+	background:var(--LightPostBackground);
+	outline:1px solid black;
+}
+.dark #SinglePostPage>div:first-of-type {
+	background:var(--DarkPostBackground);
+}
+
+
+#SinglePostPage>div:first-of-type>figure>canvas {
+	width: 64px;
+	height: 64px;
+	background: white;
+	outline: 1px solid black;
+}
+
+#SinglePostPage>div:first-of-type>figure {
+	display: grid;
+	column-gap: 8px;
+	grid-template-columns: 64px auto 72px;
+	align-items:center;
+	padding-left: 8px;
+	padding-top: 8px;
+}
+#SinglePostPage>div:first-of-type>figure>span {
+	padding-top:8px;
+	grid-column:1/3;
+}
+
+#SinglePostPage>div:first-of-type>figure>figcaption {
+	height: min-content;
+	align-self: center;
+	font-weight: bold;
+	margin: 0;
+}
+#SinglePostPage>div:first-of-type>figure>div {
+	height:min-content;
+}
+#SinglePostPage>div:first-of-type>figure>div>i{
+	padding-right:8px;
+}
+#SinglePostPage>div:first-of-type>h2 {
+	padding:8px;
+	font-weight:normal;
+	text-align: left;
+}
+#SinglePostPage>div:first-of-type>canvas {
 	width: 100%;
 	/* width:256px;
 	height:192px; */
@@ -474,7 +604,57 @@ footer li:nth-of-type(5) {
 	/* margin:8px;; */
 
 }
+#SinglePostPage>div:first-of-type>div:first-of-type {
+	display:grid;
+	padding:8px;
+	padding-top:16px;
+	grid-template-columns: auto 100px;
+}
+#SinglePostPage>div:first-of-type>div:first-of-type>h2:last-of-type{
+	text-align: right;
+}
+#SinglePostPage>div:first-of-type>div:last-of-type {
+	height:48px;
+	display: flex;
+	flex-direction: row;
+	/* flex-basis: 48px; */
+	padding:8px;
+	/* padding-top:0px; */
+	overflow:visible;
+	overflow-x: scroll;
+}
+#SinglePostPage>div:first-of-type>div>figure>canvas{
+	width:48px;
+	height:48px;
+	outline:1px solid black;
+	background:white;
+}
+#SinglePostPage>div:first-of-type>div>figure {
+	width:100%;
+	display:grid;
+	align-items: center;
+	grid-template-columns: 48px auto;
+	/* width:min-content; */
+	/* outline:1px solid black; */
+	/* padding:8px; */
+	/* width:48px;
+	height:48px; */
+}
+#SinglePostPage>div:first-of-type>div>figure:first-of-type {
+	margin-left:0;
+}
 
+#SinglePostPage>div:first-of-type>div>figure:last-of-type {
+	margin-right:0;
+}
+#SinglePostPage>div:first-of-type>div>figure>figcaption {
+	/* height:48px; */
+	padding-left:8px;
+	padding-right:8px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
 /* 
 #SinglePostPage>div:last-of-type {
 	display: grid;
@@ -503,4 +683,99 @@ article.FeedEnd h1 {
 	color: var(--DarkPostText);
 }
 
+/* #endregion */
+
+/* #region */
+#SingleGroupPage {
+	color:var(--LightPostText);
+}
+.dark #SingleGroupPage {
+	color:var(--DarkPostText);
+}
+#SingleGroupPage>div:first-of-type {
+	background:var(--LightPostBackground);
+	/* padding:8px; */
+	padding-top:8px;
+	outline:1px solid black;
+}
+.dark #SingleGroupPage>div:first-of-type {
+	background:var(--DarkPostBackground);
+}
+#SingleGroupPage>div:first-of-type>canvas {
+	background:white;
+	border:1px solid black;
+	width:96px;
+	height:96px;
+	margin:auto;
+	
+}
+#SingleGroupPage>div:first-of-type>h1 {
+	text-align: center;
+	font-size:22px;
+	font-weight:normal;
+	padding:8px;
+	padding-bottom:0;
+}
+#SingleGroupPage>div>div:not(#SingleGroupPage>div>div:last-of-type) {
+	padding:8px;
+	/* padding-top:16px; */
+}
+#SingleGroupPage>div h2 {
+	font-weight:normal;
+}
+
+#SingleGroupPage>div:first-of-type>figure>canvas {
+	width: 64px;
+	height: 64px;
+	background: white;
+	outline: 1px solid black;
+}
+
+#SingleGroupPage>div:first-of-type>figure {
+	display: grid;
+	column-gap: 8px;
+	grid-template-columns: 64px auto 72px;
+	align-items:center;
+	/* padding:8px; */
+	padding-top:8px;
+	padding-left:8px;
+}
+
+#SingleGroupPage>div:first-of-type>figure>figcaption {
+	height: min-content;
+	align-self: center;
+	font-weight: bold;
+	margin: 0;
+}
+#SingleGroupPage>div:first-of-type>div:last-of-type {
+	height:48px;
+	display:flex;
+	flex-direction: row;
+	padding:8px;
+	overflow: hidden;
+	overflow-x:scroll;
+	gap: 8px;
+}
+#SingleGroupPage>div:first-of-type>div:last-of-type>figure{
+	display:grid;
+	grid-template-columns: 48px 144px;
+	outline:1px solid black;
+}
+#SingleGroupPage>div:first-of-type>div:last-of-type>figure>figcaption {
+	padding-left:8px;
+	height:min-content;
+	align-self:center;
+}
+#SingleGroupPage>div:first-of-type>div:last-of-type>figure>canvas{
+	outline:1px solid black;
+	background:white;
+	width:48px;
+	height:48px;
+}
+
+#SingleGroupPage>div:nth-of-type(2)>h2 {
+	font-weight: normal;
+	text-align: center;
+	padding: 16px;
+}
 /* #endregion */

@@ -1,9 +1,9 @@
 <!-- 
 	PART A
 
-	Implemented as a mobile-only app
+	O Implemented as a mobile-only app
 	Manifest file contains relevant objects the App will need
-	Use of custom design components that are initially devoid of user-requested data
+	O Use of custom design components that are initially devoid of user-requested data
 	Third Party interactive components used in implementation
 	User-selectalbe theme 
 
@@ -13,7 +13,7 @@ PART B
 	AJAX implemented for at least four get and four post actions
 		GET
 			- O Explore page (all posts)
-			- Single Post (and comments)
+			- O Single Post (and comments)
 			- All posts from a group
 			- User Info + All posts from a user
 			- 
@@ -23,8 +23,8 @@ PART B
 			-
 			-
 		
-	Data interchange format between App and RESTful web service using JSON
-	Use of Fetch API to implement AJAX communication
+	O Data interchange format between App and RESTful web service using JSON
+	O Use of Fetch API to implement AJAX communication
 	localStorage demonstrated remembering user actions, and app reload is contextually remembered at least three (3)
 	Service Worker to cache HTML/CSS/JS objects in-browser, and able to load without the network being present
 
@@ -64,7 +64,7 @@ PART D
 	</header>
 
 	<main id="Main">
-		<section id="ExplorePage">
+		<section id="ExplorePage" >
 			<div id="ExplorePageLoading">
 				<div><i class="bi bi-pencil-fill"></i></div>
 				<h2>Loading</h2>
@@ -76,20 +76,65 @@ PART D
 			</article> -->
 		</section>
 		<section id="SinglePostPage" hidden>
-			<canvas id="SinglePostCanvas" width="256" height="196"></canvas>
-			<figure><canvas id="SinglePostUserCanvas" width="64" height="64"></canvas>
-				<figcaption id="SinglePostUsername">johny</figcaption>
-				<div><i class="bi bi-star"></i><span>20</span></div>
-			</figure>
-			<p id="SinglePostText">regege</p>
-			<span id="SinglePostDate">Posted on 1234123123</span>
-			<h2>2 comments</h2>
+			<div>
+				<canvas id="SinglePostCanvas" width="256" height="196"></canvas>
+				<figure><canvas id="SinglePostUserCanvas" width="64" height="64"></canvas>
+					<figcaption id="SinglePostUsername"></figcaption>
+					<div><i class="bi bi-star"></i><span>0</span></div>
+				</figure>
+				<div>
+					<h2>Posted in:</h2>
+					<h2 id="SinglePostDate">Draw a reply</h2>
+				</div>
+				<div id="SinglePostGroupHolder">
+
+				</div>
+			</div>
+			<div>
+				<h2 id="SinglePostCommentsHeader">2 Replies</h2><button>Draw a reply</button>
 			</div>
 			<div id="SinglePostComments">
-				<div id="SinglePostCommentsLoading">
+				<div id="SinglePostCommentsLoading" hidden>
 					<div><i class="bi bi-pencil-fill"></i></div>
 					<h2>Loading</h2>
 				</div>
+			</div>
+		</section>
+		<section id="SingleGroupPage" hidden>
+			<div>
+				<canvas id="SingleGroupCanvas" width="96" height="96"></canvas>
+				<h1 id="SingleGroupName">Group 1</h1>
+				<div>
+					<h2>Group Owner:</h2>
+				</div>
+				<figure><canvas id="SingleGroupUserCanvas" width="64" height="64"></canvas>
+					<figcaption id="SingleGroupUsername">Username</figcaption>
+				</figure>
+
+				<div>
+					<h2>Users in Group:</h2>
+				</div>
+				<div id="SingleGroupUserHolder">
+					<figure><canvas width="64" height="64"></canvas>
+						<figcaption>Username</figcaption>
+					</figure>
+					<figure><canvas width="64" height="64"></canvas>
+						<figcaption>Username</figcaption>
+					</figure>
+					<figure><canvas width="64" height="64"></canvas>
+						<figcaption>Username</figcaption>
+					</figure>
+				</div>
+			</div>
+			<div>
+				<h2>2 Posts</h2>
+			</div>
+			<div id="SingleGroupPosts">
+				<div id="SingleGroupPostsLoading" hidden>
+					<div><i class="bi bi-pencil-fill"></i></div>
+					<h2>Loading</h2>
+				</div>
+				
 			</div>
 		</section>
 		<!-- <section id="DrawPage">
