@@ -64,7 +64,6 @@ const mysql = require("mysql");
 
 // const hashKey = crypto.generateKey("hmac",{length:64}); // generate a cryto key (because this is generated every time, I can this only being a temporary solution)
 const hashKey = "lorem ipsum";
-// const acceptedHost = "192.168.0.143"; // only non-resource requests coming from here can be used.
 const acceptedHost = "localhost:3000";
 const serverHost = "localhost";
 
@@ -483,7 +482,7 @@ async function IndexProcess(req, res) {
 		}
 	} else {
 		$(terminal.info + "This is the first access by this IP");
-		fs.writeFileSync(accessPath + req.connection.remoteAddress, Date.now().toString()); // create a new file with the time of access
+		fs.writeFileSync(accessPath + req.connection.remoteAddress, 'test')//Date.now().toString()); // create a new file with the time of access
 	}
 	//#endregion
 	//#region origin blocking

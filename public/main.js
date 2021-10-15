@@ -4,9 +4,8 @@ function $(ID) { // I always thought the $ used in jquery was some magic thing, 
 
 class Post { // store posts inside a class, makes it easier to use
 	// if isReply, slightly change the layout to put the comment count on the right next to the username, and remove the favourites star
-	constructor(parent, isReply, userID, userUsername, userData, postID, postData, postIsSpoiler, postIsNSFW, postDate, commentCount) {
+	constructor(isReply, userID, userUsername, userData, postID, postData, postIsSpoiler, postIsNSFW, postDate, commentCount) {
 		this.isReply = isReply;
-		let me = this;
 		this.user = {
 			ID: userID,
 			username: userUsername,
@@ -22,7 +21,8 @@ class Post { // store posts inside a class, makes it easier to use
 			date: postDate
 		};
 	}
-	render () {
+	render (parent) {
+		let me = this;
 		this.mainElement = document.createElement("article");
 		if (this.isReply) {
 			this.mainElement.className = "ReplyPost";
@@ -55,7 +55,7 @@ class Post { // store posts inside a class, makes it easier to use
 				OpenPost(me); // open the single page view of the post
 			});
 		}
-		if (isReply) {
+		if (this.isReply) {
 			this.canvas.width = 196;
 			this.canvas.height = 144;
 		} else {
@@ -100,11 +100,11 @@ class Post { // store posts inside a class, makes it easier to use
 
 		this.userFigure.append(this.numbersDiv);
 
-		parent.append(this.mainElement);
 		if (this.isReply) this.imageData = renderImage(this.canvas, this.post.data, 192, 144); // render the image
 		else this.imageData = renderImage(this.canvas, this.post.data, 256, 192); // render the image
-
+		
 		this.parent = parent;
+		this.parent.append(this.mainElement);
 	}
 	remove() {
 		this.mainElement.remove();
@@ -113,7 +113,6 @@ class Post { // store posts inside a class, makes it easier to use
 }
 class Group { // making these classes with their render functions makes me appreciate what react and stuff aim to do, because this can get a bit tedious
 	constructor(groupID, groupName, groupData, groupDescription, groupDate, userID, userUsername, userData) {
-		let me = this;
 		this.group = {
 			ID: groupID,
 			name: groupName,
@@ -128,6 +127,7 @@ class Group { // making these classes with their render functions makes me appre
 		};
 	}
 	render(parent) { // render this element into a parent, creating every html object. Doing this is the reason why a layout framework wasn't used, cause I save time having to add classnames (I guess having so much css would balance that out, but it gives me total control)
+		let me = this;
 		// this only renders the small block used for single posts and the groups page
 		this.mainElement = document.createElement("figure");
 
@@ -144,7 +144,8 @@ class Group { // making these classes with their render functions makes me appre
 			OpenGroup(me) // opens the single page view of the group
 		});
 		// this.mainElement.
-		parent.append(this.mainElement);
+		this.parent = parent;
+		this.parent.append(this.mainElement);
 
 		this.imageData = renderImage(this.canvas, this.group.data, 96, 96);
 	}
@@ -289,7 +290,7 @@ function ExplorePage() { // at the moment this is just selects a bit of data fro
 		for (let i = 0; i < data.length; i++) {
 			let newPost = new Post(false, data[i]["UserID"], data[i]["UserDisplayName"], data[i]["UserDisplayIcon"], data[i]["PostID"], data[i]["PostDrawing"], data[i]["PostIsSpoiler"], data[i]["PostIsNSFW"], data[i]["PostCreateTime"], data[i]["ReplyCount"]);
 			newPost.render($("ExplorePage"));
-			explorePosts.append(newPost);
+			explorePosts.push(newPost);
 		}
 	}).catch();
 
@@ -308,22 +309,22 @@ function OpenPost(post) {
 	CloseAllPages();
 	$("SinglePostPage").hidden = false;
 	$("SinglePostCommentsLoading").hidden = false;
-	$("SinglePostDate").innerHTML = new Date(post.post.date * 1000).toLocaleDateString("en-GB");
+	$("SinglePostDate").innerHTML = new Date(post.post.date * 1000).toLocaleDateString("en-GB"); // convert the unix time int of the post into a date time - timezones arent accounted for yet
 	$("SinglePostUsername").innerHTML = post.user.username;
 	$("SinglePostCanvas").getContext("2d").putImageData(post.imageData, 0, 0);
-	// $("SinglePostGroupHolder").innerHTML = ""; // in case all the replies's html wasnt cleared, finish the job
-	// ^ ignore this, I forgot that the loading stuff is in the same div, so we just have to hope that the class can remove it's own html
+	$("SinglePostGroupHolder").innerHTML = ""; // remove the html from the previous group wasnt cleared, finish the job
 	$("SinglePostCommentsHeader").innerHTML = post.post.commentCount + " Replies";
 	if (post.post.commentCount == 1) $("SinglePostCommentsHeader").innerHTML = post.post.commentCount + "Reply"; // grammar
 	fetch("https://localhost:3000/api/post/" + post.post.ID + "/", { // in the future, instead of sending an object with all of the posts that includes their data, send an array like ['0123', '4567', 'etc'] that the server can fetch for each post individually - or in sections - instead of all at once
 		method: "GET"
 	}).then(response => response.json()).then((data) => { // the usual fetch json
 		$("SinglePostCommentsLoading").hidden = true;
-		let group = new Group($("SinglePostGroupHolder"), data.group[0]["GroupID"], data.group[0]["GroupDisplayName"], data.group[0]["GroupDisplayIcon"], data.group[0]["GroupDescription"], data.group[0]["GroupDate"], data.group[0]["UserID"], data.group[0]["UserDisplayName"], data.group[0]["UserDisplayIcon"]); // the little group icon with the groupname
+		let group = new Group(data.group[0]["GroupID"], data.group[0]["GroupDisplayName"], data.group[0]["GroupDisplayIcon"], data.group[0]["GroupDescription"], data.group[0]["GroupDate"], data.group[0]["UserID"], data.group[0]["UserDisplayName"], data.group[0]["UserDisplayIcon"]); // the little group icon with the groupname
+		group.render($("SinglePostGroupHolder"));
 		for (let i = 0; i < data.replies.length; i++) {
-			let reply = new Post(true, data.replies[i]["UserID"], data.replies[i]["UserDisplayName"], data.replies[i]["UserDisplayIcon"], data.replies[i]["PostID"], data.replies[i]["PostDrawing"], data.replies[i]["PostIsSpoiler"], data.replies[i]["PostIsNSFW"]); // the replies to the post
-			reply.render($("SinglePostComments"));
-			currentSinglePostReplies.append(reply); // there isnt a 100% reason that these posts are inside an array, considering this array isn't accessed... might need to rethink
+			let newReply = new Post(true, data.replies[i]["UserID"], data.replies[i]["UserDisplayName"], data.replies[i]["UserDisplayIcon"], data.replies[i]["PostID"], data.replies[i]["PostDrawing"], data.replies[i]["PostIsSpoiler"], data.replies[i]["PostIsNSFW"]); // the replies to the post
+			newReply.render($("SinglePostComments"));
+			currentSinglePostReplies.push(newReply); // there isnt a 100% reason that these posts are inside an array, considering this array isn't accessed... might need to rethink
 		}
 	}).catch(
 		//couldn't connect to server
@@ -348,9 +349,11 @@ function OpenGroup(group) {
 	fetch("https://localhost:3000/api/post/group/" + group.group.ID + "/", {
 		method: "GET"
 	}).then((response) => response.json()).then((data) => {
-		$("SingleGroupPostLoading").hidden = true;
+		$("SingleGroupPostsLoading").hidden = true;
 		for (let i = 0; i < data.length; i++) {
-			currentSingleGroupPosts.push(new Post($("SingleGroupPosts"), false, data[i]["UserID"], data[i]["UserDisplayName"], data[i]["UserDisplayIcon"], data[i]["PostID"], data[i]["PostDrawing"], data[i]["PostIsSpoiler"], data[i]["PostIsNSFW"], data[i]["PostCreateTime"], data[i]["ReplyCount"]));
+			let newPost = new Post(false, data[i]["UserID"], data[i]["UserDisplayName"], data[i]["UserDisplayIcon"], data[i]["PostID"], data[i]["PostDrawing"], data[i]["PostIsSpoiler"], data[i]["PostIsNSFW"], data[i]["PostCreateTime"], data[i]["ReplyCount"]);
+			currentSingleGroupPosts.push(newPost);
+			newPost.render($("SingleGroupPosts"));
 		}
 	}).catch()
 }
