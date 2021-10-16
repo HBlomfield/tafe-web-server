@@ -21,7 +21,7 @@ class Post { // store posts inside a class, makes it easier to use
 			date: postDate
 		};
 	}
-	render (parent) {
+	render(parent) {
 		let me = this;
 		this.mainElement = document.createElement("article");
 		if (this.isReply) {
@@ -45,14 +45,14 @@ class Post { // store posts inside a class, makes it easier to use
 				me.canvasCensorButton.remove();
 				if (!this.isReply) {
 					me.canvas.addEventListener('click', function () {
-						OpenPost(me); // open the single page view of the post, but only after the user has accepted they want to see a spolier or nsfw stuff
+						OpenPost(me, true); // open the single page view of the post, but only after the user has accepted they want to see a spolier or nsfw stuff
 					});
 				}
 			})
 			this.canvasHolder.append(this.canvasCensorButton);
 		} else if (!this.isReply) {
 			me.canvas.addEventListener('click', function () {
-				OpenPost(me); // open the single page view of the post
+				OpenPost(me, true); // open the single page view of the post
 			});
 		}
 		if (this.isReply) {
@@ -102,7 +102,7 @@ class Post { // store posts inside a class, makes it easier to use
 
 		if (this.isReply) this.imageData = renderImage(this.canvas, this.post.data, 192, 144); // render the image
 		else this.imageData = renderImage(this.canvas, this.post.data, 256, 192); // render the image
-		
+
 		this.parent = parent;
 		this.parent.append(this.mainElement);
 	}
@@ -141,7 +141,7 @@ class Group { // making these classes with their render functions makes me appre
 		this.mainElement.append(this.canvas);
 		this.mainElement.append(this.nameElement);
 		this.mainElement.addEventListener('click', function () {
-			OpenGroup(me) // opens the single page view of the group
+			OpenGroup(me, true) // opens the single page view of the group
 		});
 		// this.mainElement.
 		this.parent = parent;
@@ -169,27 +169,45 @@ function test() {
 	console.log('test');
 }
 
-const pages = [{
+let tabs = [{
 		name: "Explore",
-		func: ExplorePage
+		func: ExplorePage,
+		history: [{
+			func: ExplorePage
+		}],
+		onMostRecentPage: false
 	},
 	{
 		name: "Groups",
-		func: test
+		func: test,
+		history: [],
+		onMostRecentPage: false
 	},
 	{
 		name: "Draw",
-		func: test
+		func: test,
+		history: [],
+		onMostRecentPage: false
 	},
 	{
 		name: "Friends",
-		func: test
+		func: test,
+		history: [],
+		onMostRecentPage: false
 	}
 ]
+let currentTab = 0;
 
 function TabbarPage(index, me) {
-	$("PageIntro").innerHTML = pages[index].name;
-	pages[index].func(); // should call the function
+	currentTab = index;
+	$("PageIntro").innerHTML = tabs[index].name;
+	// pages[index].func(); // should call the function
+
+	if (tabs[index].history.length > 0) {
+		tabs[index].history[tabs[index].history.length - 1].func(tabs[index].history[tabs[index].history.length - 1].obj); // call the most recent thing in the history
+	} else {
+		tabs[index].func();
+	}
 	$("PageIntro").className = "";
 	for (let i = 0; i < 4; i++) {
 		let child = $("TabbarIcons").children[i];
@@ -219,6 +237,26 @@ function CloseAllPages() {
 	$("SinglePostPage").hidden = true;
 	$("SingleGroupPage").hidden = true;
 }
+
+const colours = [
+	["black", 00, 00, 00],
+	["white", 255, 255, 255],
+	["gray", 123, 123, 123],
+	["red", 255, 0, 0],
+	["orange", 255, 128, 0],
+	["yellow", 255, 255, 0],
+	["green", 0, 255, 0],
+	["blue", 0, 64, 192],
+	["indigo", 0, 0, 255],
+	["violet", 255, 0, 255],
+	["dark red", 128, 0, 0],
+	["dark orange", 128, 64, 0],
+	["dark yellow", 128, 128, 0],
+	["dark green", 0, 128, 0],
+	["dark blue", 0, 32, 96],
+	["dark indigo", 0, 0, 64],
+	["dark violet", 0, 96, 96],
+]
 
 function renderImage(canvas, data, width, height) {
 	let context = canvas.getContext("2d");
@@ -253,33 +291,12 @@ function renderImage(canvas, data, width, height) {
 	return imageData;
 }
 
-const colours = [
-	["black", 00, 00, 00],
-	["white", 255, 255, 255],
-	["gray", 123, 123, 123],
-	["red", 255, 0, 0],
-	["orange", 255, 128, 0],
-	["yellow", 255, 255, 0],
-	["green", 0, 255, 0],
-	["blue", 0, 64, 192],
-	["indigo", 0, 0, 255],
-	["violet", 255, 0, 255],
-	["dark red", 128, 0, 0],
-	["dark orange", 128, 64, 0],
-	["dark yellow", 128, 128, 0],
-	["dark green", 0, 128, 0],
-	["dark blue", 0, 32, 96],
-	["dark indigo", 0, 0, 64],
-	["dark violet", 0, 96, 96],
-]
-
-var explorePosts = []
+let explorePosts = [];
 
 function ExplorePage() { // at the moment this is just selects a bit of data from all posts, but in the future this will filter based on the users preferences
-	for (let i = 0; i < explorePosts.length;i++) {
+	for (let i = 0; i < explorePosts.length; i++) {
 		explorePosts[i].remove() // remove existing html
 	}
-	explorePosts = [];
 	CloseAllPages()
 	$("ExplorePage").hidden = false;
 	$("ExplorePageLoading").hidden = false;
@@ -298,9 +315,16 @@ function ExplorePage() { // at the moment this is just selects a bit of data fro
 
 let currentSinglePostReplies = [];
 
-function OpenPost(post) {
+function OpenPost(post, addToHistory) {
 	if (post.isReply) {
 		return null
+	}
+	if (addToHistory) {
+		tabs[currentTab].history.push({
+			func: OpenPost,
+			obj: post
+		});
+		tabs[currentTab].onMostRecentPage = true;
 	}
 	for (let i = 0; i < currentSinglePostReplies.length; i++) {
 		currentSinglePostReplies[i].remove();
@@ -335,7 +359,14 @@ function OpenPost(post) {
 
 let currentSingleGroupPosts = [];
 
-function OpenGroup(group) {
+function OpenGroup(group, addToHistory) {
+	if (addToHistory) {
+		tabs[currentTab].history.push({
+			func: OpenGroup,
+			obj: group
+		});
+		tabs[currentTab].onMostRecentPage = true;
+	}
 	for (let i = 0; i < currentSingleGroupPosts.length; i++) {
 		currentSingleGroupPosts[i].remove();
 	};
@@ -358,6 +389,21 @@ function OpenGroup(group) {
 	}).catch()
 }
 
+
+function GoBack(index) {
+	if (tabs[index].onMostRecentPage){// && tabs[index].history.length > 1) { // if we are at the end of the page history, and it is possible to, we pop twice. Because the most recent page in the history is already opened, we would essentially be opening the current page again
+		tabs[index].history.pop()
+	}
+	let lastPage = null;
+	if (tabs[index].history[0] !== undefined) {
+		lastPage = tabs[index].history.pop()
+	} else {
+		lastPage = tabs[index];
+	}
+	lastPage.func(lastPage.obj, false) // the false means that the action won't be added to the history, otherwise there would be an infinite loop of removing the page and then adding it back again. The last true means it wont set endOfPageHistory to true
+	tabs[index].onMostRecentPage = false;
+	// console.log(pageHistory);
+}
 
 // add a page history with the type of content adn the ID ? maybe a list of functions?
 // [OpenPost('abdabsdsadsad'), Opengroup('absdbasbdbsd')] etc ect
