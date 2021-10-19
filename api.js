@@ -163,9 +163,9 @@ class CRUD { // class to access the database
 		let promise = new Promise((resolve) => {
 			databasePool.getConnection(function (err, connection) { // connect to the database pool, max of 10 at a time but because they close almost instantly after they are opened, I imagine it would require an incredibly slow cpu or busy server to max out
 				if (err) throw err; // if there is an error, stop execution. this will be a big issue for anyone trying to use the site and accidentally causing an error, but it helps the error get fixed				
-				let query = "SELECT * FROM users WHERE users.ID = '" + readValue + "' AND IsDisabled != 1;" // query used if withEmail is false
+				let query = "SELECT ID, Email, DisplayName, hex(DisplayIcon) as DisplayIcon, DisplayBio, Password, JoinedOn, IsVerified, VerificationCode, LastUsedIP, IsPrivate, IsDisabled FROM users WHERE users.ID = '" + readValue + "' AND IsDisabled != 1;" // query used if withEmail is false
 				if (withEmail) {
-					query = "SELECT * FROM users WHERE users.Email = '" + readValue + "' AND IsDisabled != 1;";
+					query = "SELECT ID, Email, DisplayName, hex(DisplayIcon) as DisplayIcon, DisplayBio, Password, JoinedOn, IsVerified, VerificationCode, LastUsedIP, IsPrivate, IsDisabled FROM users WHERE users.Email = '" + readValue + "' AND IsDisabled != 1;";
 				}
 				connection.query(query, function (err, result) { // do the query
 					$(terminal.indent + terminal.note + query);
@@ -184,13 +184,14 @@ class CRUD { // class to access the database
 		let userInfo = []; // the info of the specific user
 		let userFriends = []; // the info of all of the user's friends
 		let userGroups = []
-		let recentPosts = []; // because we don't want to send all of the user's posts at once, we send the most recent, probably the 3 to 5 most recent for the sake of the client
+		//let recentPosts = []; // because we don't want to send all of the user's posts at once, we send the most recent, probably the 3 to 5 most recent for the sake of the client
+		let userPosts = []; // for now just send it all
 		await new Promise((resolve) => {
 			databasePool.getConnection(async function (err, connection) {
 				let query = ""
 				if (err) throw err;
 				await new Promise((resolve) => { // we reuse the same name but with different promises -> sounds like a song lyric
-					query = "SELECT DisplayName, DisplayIcon, DisplayBio, JoinedOn FROM users WHERE ID = '" + ID + "' AND IsDisabled != 1 AND IsPrivate != 1 ORDER BY JoinedOn LIMIT 1;"; // get the user's basic info				
+					query = "SELECT DisplayName, hex(DisplayIcon), DisplayBio, JoinedOn FROM users WHERE ID = '" + ID + "' AND IsDisabled != 1 AND IsPrivate != 1 ORDER BY JoinedOn LIMIT 1;"; // get the user's basic info				
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						// $(result);
@@ -203,7 +204,7 @@ class CRUD { // class to access the database
 					})
 				});
 				await new Promise((resolve) => {
-					query = "SELECT users.ID, users.DisplayName, users.DisplayIcon FROM users INNER JOIN userrelations ON ((userrelations.UserID = users.ID AND userrelations.RelationUserID = '" + ID + "') OR (userrelations.UserID = '" + ID + "' AND userrelations.RelationUserID = users.ID)) AND userrelations.SocialStatus = 1 AND userrelations.IsDisabled != 1 AND users.IsPrivate != 1 AND users.IsDisabled != 1 GROUP BY users.ID;";
+					query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon, users.DisplayBio as UserBio, users.JoinedOn as UserCreateTime FROM users INNER JOIN userrelations ON ((userrelations.UserID = users.ID AND userrelations.RelationUserID = '" + ID + "') OR (userrelations.UserID = '" + ID + "' AND userrelations.RelationUserID = users.ID)) AND userrelations.SocialStatus = 1 AND userrelations.IsDisabled != 1 AND users.IsPrivate != 1 AND users.IsDisabled != 1 GROUP BY users.ID;";
 					// this here is a massive query and the longest line of the code so I'll break it down on this line instead of that one
 					// [select users.accountname, users.accounticon from users] the first part just selects the name and icon from the friends, simple
 					// [inner join userrelations] // we check the requested user's friend list 
@@ -223,17 +224,17 @@ class CRUD { // class to access the database
 					})
 				});
 				await new Promise((resolve) => {
-					query = "SELECT posts.ID, posts.GroupID, posts.Text, hex(posts.Drawing), posts.CreationDate, posts.IsSpoiler, posts.IsNSFW, count(replies.ID) as ReplyCount FROM posts INNER JOIN posts as replies ON replies.ReplyToID = posts.ID INNER JOIN users ON users.ID = posts.UserID AND posts.UserID = '" + ID + "' AND posts.IsDisabled != 1 ORDER BY CreationDate DESC LIMIT 3;";
+					query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon, users.DisplayBio as UserBio, users.JoinedOn as UserCreateTime,posts.ID as PostID, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW, posts.CreationDate as PostCreateTime, count(replies.ID) as ReplyCount FROM posts INNER JOIN posts as replies ON replies.ReplyToID = posts.ID INNER JOIN users ON users.ID = posts.UserID AND posts.UserID = '" + ID + "' AND posts.IsDisabled != 1 GROUP BY posts.ID ORDER BY posts.CreationDate DESC"; // LIMIT 3;";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
-						recentPosts = result;
+						userPosts = result;
 						// console.log (result);
 						resolve();
 					});
 				});
 				await new Promise((resolve) => {
-					query = "SELECT groups.ID, groups.DisplayName, groups.DisplayIcon FROM groups INNER JOIN groupmembers ON groups.ID = groupmembers.GroupID AND groupmembers.UserID = '" + ID + "' WHERE groupmembers.IsDisabled != 1;";
+					query = "SELECT groups.ID as GroupID, groups.DisplayName as GroupDisplayName, hex(groups.DisplayIcon) as GroupDisplayIcon, groups.description as GroupDescription, users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon, users.DisplayBio as UserBio, users.JoinedOn as UserCreateTime FROM groups INNER JOIN users ON users.ID = groups.OwnerID INNER JOIN groupmembers ON groups.ID = groupmembers.GroupID AND groupmembers.UserID =  '" + ID + "' WHERE groups.IsPrivate != 1 AND groupmembers.IsDisabled != 1;";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
@@ -248,7 +249,7 @@ class CRUD { // class to access the database
 		return {
 			user: userInfo,
 			friends: userFriends,
-			posts: recentPosts,
+			posts: userPosts,
 			groups: userGroups
 		};
 	}
@@ -258,7 +259,9 @@ class CRUD { // class to access the database
 		await new Promise((resolve) => { // the promise that will resolve when the database has been accessed
 			databasePool.getConnection(function (err, connection) { // swim in da pool
 				if (err) throw err;
-				connection.query("INSERT INTO users (`ID`,`Email`,`DisplayName`,`Password`, `VerificationCode`, `JoinedOn`) VALUES ('" + ID + "','" + email + "','" + displayName + "','" + password + "','" + verifyCode + "', " + time + ");", function (err, result) { // splash some wattar
+				let query = "INSERT INTO users (`ID`,`Email`,`DisplayName`,`Password`, `VerificationCode`, `JoinedOn`) VALUES ('" + ID + "','" + email + "','" + displayName + "','" + password + "','" + verifyCode + "', " + time + ");";
+				$(terminal.note + terminal.indent + query);
+				connection.query(query, function (err, result) { // splash some wattar
 					$(terminal.indent + terminal.note + query);
 					if (err) throw err;
 					connection.release(); // get out of da pool
@@ -297,24 +300,92 @@ class CRUD { // class to access the database
 		});
 		return posts;
 	}
-	async GetGroupPosts(ID) {
-		let posts = {};
+	async GetUserGroups(ID) { // we get the groups from the user
+		let joinedGroups = [];
+		let pendingGroups = [];
 		await new Promise((resolve) => {
-			databasePool.getConnection(function (err, connection) {
+			databasePool.getConnection(async function (err, connection) {
 				if (err) throw err;
-				// let query = "SELECT posts.ID as PostID, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts WHERE posts.GroupID = '" + ID + "' AND posts.ReplyToID IS NULL AND posts.IsDisabled !=1;";
-				let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon, users.DisplayBio as UserBio,posts.ID as PostID, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW, posts.CreationDate as PostCreateTime, count(replies.ID) as ReplyCount FROM posts LEFT JOIN posts AS replies ON replies.ReplyToID = posts.ID INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 and posts.ReplyToId IS NULL AND posts.GroupID = '"+ID+"' GROUP BY posts.ID;";
-				connection.query(query, function (err, result) {
-					$(terminal.note + terminal.indent + query);
+				await new Promise((resolve) => {
 					if (err) throw err;
-					posts = result;
-					// $(result);
-					connection.release();
-					resolve();
+
+					let query = "SELECT groups.ID as GroupID, groups.DisplayName as GroupDisplayName, hex(groups.DisplayIcon) as GroupDisplayIcon, groups.description as GroupDescription, users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon, users.DisplayBio as UserBio, users.JoinedOn as UserCreateTime FROM groups INNER JOIN users ON users.ID = groups.OwnerID INNER JOIN groupmembers ON groups.ID = groupmembers.GroupID AND groupmembers.UserID =  '" + ID + "' WHERE groupmembers.IsDisabled != 1 AND groupmembers.Status = 1;"
+					connection.query(query, function (err, result) {
+						$(terminal.note + terminal.indent + query);
+						if (err) throw err;
+						joinedGroups = result;
+						// $(result);
+						resolve();
+					});
+				})
+				await new Promise((resolve) => {
+					if (err) throw err;
+					// we only select the group's name and icon, as they haven't joined the group yet and so have no permission to access it
+					let query = "SELECT groups.ID as GroupID, groups.DisplayName as GroupDisplayName, hex(groups.DisplayIcon) as GroupDisplayIcon FROM groups INNER JOIN users ON users.ID = groups.OwnerID INNER JOIN groupmembers ON groups.ID = groupmembers.GroupID AND groupmembers.UserID =  '" + ID + "' WHERE groupmembers.IsDisabled != 1 AND groupmembers.Status = 0;"
+					connection.query(query, function (err, result) {
+						$(terminal.note + terminal.indent + query);
+						if (err) throw err;
+						pendingGroups = result;
+						// $(result);
+						resolve();
+					});
+				})
+				connection.release();
+				resolve();
+			});
+		});
+		return {
+			groups: joinedGroups,
+			invites: pendingGroups
+		};
+	}
+	async GetUserFriends(ID) { // get the friends of the user
+
+	}
+	async GetGroup(ID) {
+		let groupInfo = {};
+		let groupPosts = {};
+		let groupUsers = {};
+		await new Promise((resolve) => {
+			databasePool.getConnection(async function (err, connection) {
+				if (err) throw err;
+				await new Promise((resolve) => {
+					let query = "SELECT groups.ID as GroupID, groups.DisplayName as GroupDisplayName, hex(groups.DisplayIcon) as GroupDisplayIcon, groups.description as GroupDescription, users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon, users.DisplayBio as UserBio, users.JoinedOn as UserCreateTime FROM groups INNER JOIN users ON users.ID = groups.OwnerID WHERE groups.ID = '" + ID + "'";
+					connection.query(query, function (err, result) {
+						$(terminal.indent + terminal.note + query);
+						if (err) throw err;
+						groupInfo = result;
+						// $(result)
+						resolve();
+					})
 				});
+				await new Promise((resolve) => {
+					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon, users.DisplayBio as UserBio, users.JoinedOn as UserCreateTime,posts.ID as PostID, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW, posts.CreationDate as PostCreateTime, count(replies.ID) as ReplyCount FROM posts LEFT JOIN posts AS replies ON replies.ReplyToID = posts.ID INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 and posts.ReplyToId IS NULL AND posts.GroupID = '" + ID + "' GROUP BY posts.ID;";
+					connection.query(query, function (err, result) {
+						$(terminal.note + terminal.indent + query);
+						if (err) throw err;
+						groupPosts = result;
+						resolve();
+					});
+				})
+				await new Promise((resolve) => {
+					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon, users.DisplayBio as UserBio, users.JoinedOn as UserCreateTime FROM groupmembers INNER JOIN users on users.ID = groupmembers.UserID AND groupmembers.groupID = '" + ID + "'";
+					connection.query(query, function (err, result) {
+						$(terminal.note + terminal.indent + query);
+						if (err) throw err;
+						groupUsers = result;
+						resolve();
+					});
+				})
+				connection.release();
+				resolve();
 			})
 		});
-		return posts;
+		return {
+			groupInfo,
+			groupPosts,
+			groupUsers
+		};
 	}
 	async GetPost(ID) { // get the post, the group's name, drawing and ID and the user's name drawing and ID, as well as the username and posts of all the comments
 		let postInfo = {} // post and user info
@@ -325,7 +396,7 @@ class CRUD { // class to access the database
 				if (err) throw err;
 				await new Promise((resolve) => {
 					// so heres a doozy. sending the raw data to json converts it all to numbers and adds ',' and \n's to it, and makes it larger(69.3kb) than if we send as a string converted to hex(39.6kb). both of these methods are still larger than the original file, which is only 19.7kb. We might as well send it as a string of hex
-					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon,posts.ID as PostID, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW, posts.CreationDate as PostCreateTime FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ID = '" + ID + "';";
+					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon, users.DisplayBio as UserBio, users.JoinedOn as UserCreateTime,posts.ID as PostID, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW, posts.CreationDate as PostCreateTime FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ID = '" + ID + "';";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
@@ -336,7 +407,7 @@ class CRUD { // class to access the database
 					});
 				});
 				await new Promise((resolve) => {
-					let query = "SELECT groups.ID as GroupID, groups.DisplayName as GroupDisplayName, hex(groups.DisplayIcon) as GroupDisplayIcon, groups.description as GroupDescription, users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon FROM posts INNER JOIN groups ON groups.ID = posts.GroupID INNER JOIN users ON users.ID = groups.OwnerID WHERE posts.ID = '" + ID + "'";
+					let query = "SELECT groups.ID as GroupID, groups.DisplayName as GroupDisplayName, hex(groups.DisplayIcon) as GroupDisplayIcon, groups.description as GroupDescription, users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon, users.DisplayBio as UserBio, users.JoinedOn as UserCreateTime FROM posts INNER JOIN groups ON groups.ID = posts.GroupID INNER JOIN users ON users.ID = groups.OwnerID WHERE posts.ID = '" + ID + "'";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
@@ -346,7 +417,7 @@ class CRUD { // class to access the database
 					})
 				});
 				await new Promise((resolve) => {
-					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ReplyToID = '" + ID + "' ORDER BY posts.CreationDate DESC;";
+					let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon, users.DisplayBio as UserBio, users.JoinedOn as UserCreateTime, posts.Text as PostText, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW FROM posts INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 AND posts.ReplyToID = '" + ID + "' ORDER BY posts.CreationDate DESC;";
 					connection.query(query, function (err, result) {
 						$(terminal.indent + terminal.note + query);
 						if (err) throw err;
@@ -368,7 +439,7 @@ class CRUD { // class to access the database
 	}
 	async GetExplore() {
 		let posts = {};
-		let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, users.DisplayIcon as UserDisplayIcon, users.DisplayBio as UserBio,posts.ID as PostID, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW, posts.CreationDate as PostCreateTime, count(replies.ID) as ReplyCount FROM posts LEFT JOIN posts AS replies ON replies.ReplyToID = posts.ID INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 and posts.ReplyToId IS NULL GROUP BY posts.ID;";
+		let query = "SELECT users.ID as UserID, users.DisplayName as UserDisplayName, hex(users.DisplayIcon) as UserDisplayIcon, users.DisplayBio as UserBio, users.JoinedOn as UserCreateTime,posts.ID as PostID, hex(posts.Drawing) as PostDrawing, posts.IsSpoiler as PostIsSpoiler, posts.IsNSFW as PostIsNSFW, posts.CreationDate as PostCreateTime, count(replies.ID) as ReplyCount FROM posts LEFT JOIN posts AS replies ON replies.ReplyToID = posts.ID INNER JOIN users ON users.ID = posts.UserID WHERE posts.IsDisabled != 1 and posts.ReplyToId IS NULL GROUP BY posts.ID;";
 		await new Promise((resolve) => {
 			databasePool.getConnection(async function (err, connection) {
 				if (err) throw err;
@@ -475,14 +546,14 @@ async function IndexProcess(req, res) {
 		// 	return Stop(429);
 		// }
 		fs.writeFileSync(accessPath + req.connection.remoteAddress, Date.now().toString() + "\n" + accessToday); // update the last access time in the file, we do this before checking the time otherwise the requester can still squeeze 1 request in
-		if (Date.now() - access < 1000) { // the user has requested multiple times in the span of 1 seconds
-			$(terminal.danger + "Last access was less than a second ago"); // 1000 milliseconsd is 1 second, if the time+1000 is less time, it means a second has not yet psased 
-			return Stop(429);
+		// if (Date.now() - access < 1000) { // the user has requested multiple times in the span of 1 seconds
+		// 	$(terminal.danger + "Last access was less than a second ago"); // 1000 milliseconsd is 1 second, if the time+1000 is less time, it means a second has not yet psased 
+		// 	return Stop(429);
 
-		}
+		// }
 	} else {
 		$(terminal.info + "This is the first access by this IP");
-		fs.writeFileSync(accessPath + req.connection.remoteAddress, 'test')//Date.now().toString()); // create a new file with the time of access
+		fs.writeFileSync(accessPath + req.connection.remoteAddress, 'test') //Date.now().toString()); // create a new file with the time of access
 	}
 	//#endregion
 	//#region origin blocking
@@ -526,22 +597,29 @@ async function IndexProcess(req, res) {
 	// set the action here and then continue after we get the body
 	const actions = {
 		// /api/user/
-		login: 0,
-		logout: 1,
-		register: 2,
-		verifyUserAccount: 3,
-		resetPassword: 4,
-		getUser: 5,
-		explorePosts: 6, // /api/post/
+		checkSession: 0,
+		login: 1,
+		logout: 2,
+		register: 3,
+		verifyUserAccount: 4,
+		resetPassword: 5,
+		getUser: 6,
+		explorePosts: 7, // /api/post/
 		// /api/post/{id}
-		readPost: 7,
-		createPost: 8,
-		deletePost: 9,
-		updatePost: 10,
+		readPost: 8,
+		createPost: 9,
+		deletePost: 10,
+		updatePost: 11,
 		// /api/post/user/{id}
-		getUserPosts: 11,
-		// /api/post/groups/{id}
-		getGroupPosts: 12
+		getUserPosts: 12,
+		// /api/groups/{id}
+		getGroup: 13,
+		// /api/me/
+		getUserSessionDetails: 14,
+		// /api/me/groups
+		getUserSessionGroups: 15,
+		// /api/me/friends
+		getUserSessionFriends: 16
 	}
 	let action = -1;
 	let wrongMethod = false; // just so that we only do Stop(405) once instead of in every case, otherwise we'll have double the lines cause of $
@@ -569,7 +647,18 @@ async function IndexProcess(req, res) {
 		if (req.method == "GET") action = actions.getUser;
 		else wrongMethod = true;
 	}
-
+	if (req.url == "/api/me/groups/") {
+		if (req.method == "GET") action = actions.getUserSessionGroups;
+		else wrongMethod = true;
+	}
+	if (req.url == "/api/me/") {
+		if (req.method == "GET") action = actions.getUserSessionDetails;
+		else wrongMethod = true;
+	}
+	if (req.url == "/api/session/") {
+		if (req.method == "GET") action = actions.checkUserSession;
+		else wrongMethod = true;
+	}
 	// if (req.url == "/api/reset-password/") {
 	// 	if(req.method=="POST") action=actions.resetPassword;
 	// 	else wrongMethod = true; //return Stop(405);
@@ -578,7 +667,7 @@ async function IndexProcess(req, res) {
 	// 	if(req.method=="POST") action=actions.changePassword;
 	// 	else wrongMethod = true; //return Stop(405);
 	// } - worry about these later
-	$(req.url);
+	// $(req.url);
 	if (req.url == "/api/post/") {
 		if (req.method == "GET") action = actions.explorePosts;
 		else wrongMethod = true;
@@ -596,9 +685,9 @@ async function IndexProcess(req, res) {
 		if (req.method == "GET") action = actions.getUserPosts; // as the client view only shows a few posts, this is a version that shows all of the posts of the user
 		else wrongMethod = true;
 	}
-	if (/^\/api\/post\/group\/[a-f0-9]{20}\/$/.test(req.url)) { // /api/post/group/{id}
+	if (/^\/api\/group\/[a-f0-9]{20}\/$/.test(req.url)) { // /api/group/{id}
 		actionIndex = req.url.slice(-21, -1);
-		if (req.method == "GET") action = actions.getGroupPosts; // as the client view only shows a few posts, this is a version that shows all of the posts of the user
+		if (req.method == "GET") action = actions.getGroup; // as the client view only shows a few posts, this is a version that shows all of the posts of the user
 		else wrongMethod = true;
 	}
 	if (wrongMethod == true) {
@@ -648,7 +737,30 @@ async function IndexProcess(req, res) {
 
 		if (action == actions.login || action == actions.register) {
 			$(terminal.danger + "User is already logged in");
+			let result = await crud.GetUser(false, session.values.UserID);
+			// console.log(result);
+			res.write(JSON.stringify({
+				"username":result[0].DisplayName,
+				"email":result[0].Email,
+				"data":result[0].DisplayIcon,
+				"bio":result[0].DisplayBio,
+				"date":result[0].JoinedOn,
+				"message":"ALREADY_LOGGED_IN",
+				
+			}));
 			return Stop(409) // send a 409, conflict
+		}
+	}
+	//#endregion
+	//#region check user session
+	if (action == actions.checkSession) {
+		$(terminal.info + "Selected action: check session");
+		if (session.values !== undefined && session.values.UserID !== undefined) {
+			$(terminal.success + "User is logged in");
+			return Stop(200);
+		} else {
+			$(terminal.danger + "User is not logged in");
+			return Stop(404);
 		}
 	}
 	//#endregion
@@ -690,7 +802,14 @@ async function IndexProcess(req, res) {
 			session.Create(); // doesn't actually make the file, only sets the cookie and generates the cookie
 			session.values["UserID"] = result[0]["ID"]; // set the user id of the session
 			session.Update(); // create the file
-			return Stop(200, "LOGIN_CORRECT")
+			res.write(JSON.stringify({
+				email: result[0]["Email"],
+				username: result[0]["DisplayName"],
+				data: result[0]["DisplayIcon"],
+				bio: result[0]["DisplayBio"],
+				message:"LOGIN_CORRECT"
+			}));
+			return Stop(200)
 		} else {
 			$(terminal.danger + "Client password does not match account password")
 			return Stop(404, "LOGIN_PASSWORD_INCORRECT")
@@ -714,7 +833,7 @@ async function IndexProcess(req, res) {
 			}
 			if (requestJSON["displayName"] == undefined) { // display name wasnt given
 				$(terminal.danger + "Display name is missing");
-				return Stop(400, "REGISTER_MISSING_DISPLAY");
+				return Stop(400, "REGISTER_MISSING_DISPLAYNAME");
 			}
 			if (requestJSON["password"] == undefined) { // password wasnt given
 				$(terminal.danger + "Password is missing");
@@ -739,16 +858,17 @@ async function IndexProcess(req, res) {
 		if (/^[a-zA-z0-9-+_.()\[\]\!\@\#\$\%\^\&\*]{1,40}$/.test(requestJSON["displayName"])) { // if the display name has invalid characters, only somewhat standard characters are allowed
 			$(terminal.success + "Display name is valid");
 		} else {
+			$(terminal.danger + "Display name is invalid");
 			return Stop(400, "REGISTER_DISPLAYNAME_INVALID");
 		}
 		let hashedPassword = crypto.createHmac('sha1', hashKey).update(requestJSON["password"]).digest("hex"); // generate the hash as hexidecimal characters
 
 		let result = await crud.GetUser(true, requestJSON["email"]);
 		// $(result);
-		if (result === undefined) { // the sql query always returns the [0] of the result an array, if nothing is found it will be undefined
+		if (result === undefined || result.length == 0) { // the sql query always returns the [0] of the result an array, if nothing is found it will be undefined
 			$(terminal.success + "Account does not exist");
 		} else {
-			$(terminal.success + "Account already exists");
+			$(terminal.danger + "Account already exists");
 			return Stop(409, "REGISTER_ACCOUNT_EXISTS"); // return a 409 conflict
 		}
 
@@ -758,7 +878,12 @@ async function IndexProcess(req, res) {
 		session.values["UserID"] = newID; // set the user id of the cookie
 		session.Update(); // create the file with the values
 		$(terminal.success + "New account was created")
-		return Stop(200, "REGISTER_SUCCESS");
+		res.write(JSON.stringify({
+			email: requestJSON["email"],
+			username: requestJSON["displayName"],
+			message:"REGISTER_SUCCESS"
+		}));
+		return Stop(200);
 	}
 	//#endregion
 	//#region /user/verify
@@ -882,29 +1007,11 @@ async function IndexProcess(req, res) {
 		return Stop(200);
 	}
 	//#endregion
-	//#region /post/user/{id} get user's posts
-	if (action == actions.getUserPosts) {
-		$(terminal.info + "Selected action: Get user's posts");
+	//#region /group/{id}
+	if (action == actions.getGroup) {
+		$(terminal.info + "Selected action: Get group info and posts");
 		$(actionIndex);
-		let result = await crud.GetUserPosts(actionIndex);
-
-		// $(result);
-
-		if (result === undefined || result === undefined || result.length == 0) { // if the post was not found, or slq error happened
-			$(terminal.danger + "Post was not found")
-			return Stop(404, "POST_NOT_FOUND");
-		}
-		$(terminal.success + "Post were found")
-		res.write(JSON.stringify(result));
-		return Stop(200);
-
-	}
-	//#endregion
-	//#region /post/group/{id}
-	if (action == actions.getGroupPosts) {
-		$(terminal.info + "Selected action: Get user's posts");
-		$(actionIndex);
-		let result = await crud.GetGroupPosts(actionIndex);
+		let result = await crud.GetGroup(actionIndex);
 
 		// $(result);
 
@@ -918,6 +1025,49 @@ async function IndexProcess(req, res) {
 
 	}
 	//#endregion
+	//#region /me/ get the account details of the session
+	if (action == actions.getUserSessionDetails) { // this gets the basic details of the user's account from the session. We don't want to be sending the user's password to the client, for example
+		$(terminal.info + "Selected action: Get user account details from session");
+		if (session.values.UserID !== undefined) {
+			let result = await crud.GetUser(false, session.values.UserID);
+			if (result.length == 0 || result === undefined) {
+				$(terminal.danger + "User was not found");
+				return Stop(404);
+			}
+			res.write(JSON.stringify({
+				"Email": result[0]["Email"],
+				"DisplayName": result[0]["DisplayName"],
+				"DisplayIcon": result[0]["DisplayIcon"],
+				"DisplayBio": result[0]["DisplayBio"],
+				"JoinedOn": result[0]["JoinedOn"],
+				"IsVerified": result[0]["IsVerified"]
+			}));
+			return Stop(200);
+		} else {
+			$(terminal.danger + "No session was found");
+			return Stop(401);
+		}
+	}
+	//#endregion
+	//#region /me/groups/
+	if (action == actions.getUserSessionGroups) { // this gets the details of the user's groups, as well as 
+		$(terminal.info + "Selected action: Get user groups from session");
+		if (session.values.UserID !== undefined) {
+			let result = await crud.GetUserGroups(session.values.UserID);
+			if (result.length == 0 || result === undefined) {
+				$(terminal.danger + "User was not found");
+				return Stop(404, "USER_NOT_FOUND");
+			}
+			res.write(JSON.stringify({
+				groups: result.groups,
+				invites: result.invites
+			}));
+			return Stop(200);
+		} else {
+			$(terminal.danger + "No session was found");
+			return Stop(401, "NOT_SIGNED_IN");
+		}
+	}
 	return Stop(400);
 }
 

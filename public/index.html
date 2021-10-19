@@ -4,28 +4,28 @@
 	O Implemented as a mobile-only app
 	Manifest file contains relevant objects the App will need
 	O Use of custom design components that are initially devoid of user-requested data
-	Third Party interactive components used in implementation
-	User-selectalbe theme 
+	O Third Party interactive components used in implementation
+	O User-selectalbe theme 
 
 PART B
 
-	Form Validation of all input fields
+	O Form Validation of all input fields
 	AJAX implemented for at least four get and four post actions
 		GET
 			- O Explore page (all posts)
 			- O Single Post (and comments)
-			- All posts from a group
-			- User Info + All posts from a user
+			- O All posts from a group
+			- O User Info + All posts from a user
 			- 
 		POST
-			-
-			-
-			-
-			-
+			- O Login
+			- O Logout
+			- O Register
+			- O 
 		
 	O Data interchange format between App and RESTful web service using JSON
 	O Use of Fetch API to implement AJAX communication
-	localStorage demonstrated remembering user actions, and app reload is contextually remembered at least three (3)
+	O - localstorage stores theme, dark mode and if user is logged in - localStorage demonstrated remembering user actions, and app reload is contextually remembered at least three (3)
 	Service Worker to cache HTML/CSS/JS objects in-browser, and able to load without the network being present
 
 PART C
@@ -44,7 +44,7 @@ PART D
  -->
 
 <!DOCTYPE html>
-<html lang="en">
+<html class="primary-green" lang="en">
 
 <head>
 	<meta charset="UTF-8">
@@ -56,15 +56,15 @@ PART D
 	<title>Document</title>
 </head>
 
-<body class="" onkeydown="ToggleDarkKey(this, event)">
+<body class="">
 	<header id="Navbar">
-		<button onclick="GoBack(0)"><i class="bi bi-arrow-left"></i></button>
-		<div>Page Title</div>
-		<button><i class="bi bi-gear"></i></button>
+		<button id="BackButton" onclick="GoBack()"><i class="bi bi-arrow-left"></i></button>
+		<div id="NavbarTitle">Page Title</div>
+		<button onclick="OptionsPage()" id="OptionsButton"><i class="bi bi-gear"></i></button>
 	</header>
 
 	<main id="Main">
-		<section id="ExplorePage" >
+		<section id="ExplorePage" hidden>
 			<div id="ExplorePageLoading">
 				<div><i class="bi bi-pencil-fill"></i></div>
 				<h2>Loading</h2>
@@ -75,19 +75,92 @@ PART D
 				<h1>No more posts were found...</h1>
 			</article> -->
 		</section>
+		<section id="MyGroups" hidden>
+			<div id="MyGroupsLoading">
+				<div><i class="bi bi-pencil-fill"></i></div>
+				<h2>Loading</h2>
+			</div>
+			<!-- Post -->
+
+			<!-- <article class="FeedEnd">
+				<h1>No more posts were found...</h1>
+			</article> -->
+		</section>
+		<section id="OptionsPage" hidden>
+			<figure id="OptionsUser">
+				<canvas id="OptionsUserIcon" width="96" height="96"></canvas>
+				<figcaption id="OptionsUserName"></figcaption>
+				<figcaption id="OptionsUserEmail"></figcaption>
+			</figure>
+			
+			<h2 id="OptionsLoggedIn">Not logged in</h2>
+			<button id="OptionsLoginButton" onclick="LoginPage()">Login</button>
+			<button id="OptionsRegisterButton" onclick="RegisterPage()">Register</button>
+			<button id="OptionsLogoutButton" onclick="Logout()">Logout</button>
+			<label>Primary Colour</label>
+			<select id="OptionsPrimaryColour" oninput="UpdateTheme()">
+				<option value="primary-red">Red</option>
+				<option value="primary-orange">Orange</option>
+				<option value="primary-yellow">Yellow</option>
+				<option value="primary-green">Green</option>
+				<option value="primary-blue">Blue</option>
+				<option value="primary-indigo">Indigo</option>
+				<option value="primary-violet">Violet</option>
+				<option value="primary-grey">Grey</option>
+			</select>
+			<label>Dark Mode</label>
+			<button id="OptionsDarkMode" onclick="ToggleDarkMode(); UpdateTheme()">
+				<div>Off</div><i class="bi bi-square"></i>
+			</button>
+		</section>
+		<section id="LoginPage" hidden>
+			<div>
+				<h1>Log in</h1>
+				<label>Email</label>
+				<input id="LoginEmail" placeholder="A valid email address." title="A valid email address." type="email">
+				<label>Password</label>
+				<input id="LoginPassword" placeholder="The password used for your account."
+					title="The password used for your account." type="password">
+				<button onclick="Login()">Log in</button>
+			</div>
+		</section>
+		<section id="ValidatePage" hidden>
+			<h2>The validation code would be sent to your email address. If you haven't received it yet, you may need to check your junk mail or send the email again.</h2>
+			<button onclick="Alert(`This doesn't do anything right now...`)">Send Again</button>
+			<input id="ValidationCode" maxlength="6">
+			<button>Validate</button>
+		</section>
+		<section id="RegisterPage" hidden>
+			<div>
+				<h1>Register</h1>
+				<label>Email</label>
+				<input id="RegisterEmail" placeholder="A valid email address." title="A valid email address."
+					type="email">
+				<label>Username</label>
+				<input id="RegisterUsername"
+					placeholder="1-40 of the following characters: a-z, A-z, 0-9, -+_.()[]!@#$%^&*. This does not need to be unique, but try to be creative!"
+					title="1-40 of the following characters: a-z, A-z, 0-9, -+_.()[]!@#$%^&*. This does not need to be unique, but try to be creative!"
+					type="username">
+				<label>Password</label>
+				<input id="RegisterPassword" placeholder="A secure but memorable password."
+					title="A secure but memorable password." type="password">
+				<label>Retype Password</label>
+				<input id="RegisterRetype" placeholder="The same password again." title="The same password again."
+					type="password">
+				<button onclick="Register()">Register</button>
+			</div>
+		</section>
 		<section id="SinglePostPage" hidden>
 			<div>
 				<canvas id="SinglePostCanvas" width="256" height="196"></canvas>
-				<figure><canvas id="SinglePostUserCanvas" width="64" height="64"></canvas>
-					<figcaption id="SinglePostUsername"></figcaption>
-					<div><i class="bi bi-star"></i><span>0</span></div>
-				</figure>
+
+				<div id="SinglePostUserHolder"></div>
+				<div><i class="bi bi-star"></i><span>0</span></div>
 				<div>
 					<h2>Posted in:</h2>
 					<h2 id="SinglePostDate">Draw a reply</h2>
 				</div>
 				<div id="SinglePostGroupHolder">
-
 				</div>
 			</div>
 			<div>
@@ -107,34 +180,54 @@ PART D
 				<div>
 					<h2>Group Owner:</h2>
 				</div>
-				<figure><canvas id="SingleGroupUserCanvas" width="64" height="64"></canvas>
-					<figcaption id="SingleGroupUsername">Username</figcaption>
-				</figure>
-
+				<div id="SingleGroupOwnerHolder">
+				</div>
 				<div>
 					<h2>Users in Group:</h2>
 				</div>
 				<div id="SingleGroupUserHolder">
-					<figure><canvas width="64" height="64"></canvas>
-						<figcaption>Username</figcaption>
-					</figure>
-					<figure><canvas width="64" height="64"></canvas>
-						<figcaption>Username</figcaption>
-					</figure>
-					<figure><canvas width="64" height="64"></canvas>
-						<figcaption>Username</figcaption>
-					</figure>
 				</div>
 			</div>
 			<div>
-				<h2>2 Posts</h2>
+				<h2 id="SingleGroupPostCount">2 Posts</h2>
 			</div>
 			<div id="SingleGroupPosts">
 				<div id="SingleGroupPostsLoading" hidden>
 					<div><i class="bi bi-pencil-fill"></i></div>
 					<h2>Loading</h2>
 				</div>
-				
+
+			</div>
+		</section>
+		<section id="SingleUserPage" hidden>
+			<div>
+				<canvas id="SingleUserCanvas" width="96" height="96"></canvas>
+				<h1 id="SingleUserName">Username</h1>
+				<p id="SingleUserBio">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Voluptate, odit dolorum.
+					Dolores vitae provident id nostrum ex ipsam delectus ut laudantium veritatis doloribus perferendis
+					exercitationem, tenetur, dolor aperiam voluptate nesciunt.</p>
+				<div id="SingleUserFriendLabel">
+					<h2>Friends:</h2>
+				</div>
+				<div id="SingleUserFriendHolder">
+
+				</div>
+				<div id="SingleUserGroupLabel">
+					<h2>In Groups:</h2>
+				</div>
+				<div id="SingleUserGroupHolder">
+
+				</div>
+			</div>
+			<div>
+				<h2 id="SingleUserPostCount">2 Posts</h2>
+			</div>
+			<div id="SingleUserPosts">
+				<div id="SingleUserPostsLoading">
+					<div><i class="bi bi-pencil-fill"></i></div>
+					<h2>Loading</h2>
+				</div>
+
 			</div>
 		</section>
 		<!-- <section id="DrawPage">
@@ -148,16 +241,23 @@ PART D
 		</section> -->
 
 	</main>
-
 	<footer id="Tabbar">
 		<h2 id="PageIntro" class="exit">Explore</h2>
 		<div id="TabbarIcons">
-			<button class="active" onclick="TabbarPage(0, this)"><i class="bi bi-grid-1x2"></i></button>
+			<button class="active" onclick="TabbarPage(0, this)"><i class="bi bi-grid-1x2-fill"></i></button>
 			<button onclick="TabbarPage(1, this)"><i class="bi bi-house"></i></button>
 			<button onclick="TabbarPage(2, this)"><i class="bi bi-pencil"></i></button>
 			<button onclick="TabbarPage(3, this)"><i class="bi bi-people"></i></button>
 		</div>
 	</footer>
+
+	<div id="Alert" hidden>
+		<div id="AlertBox">
+			<h1 id="AlertText"></h1>
+			<button id="AlertFunc">OK</button>
+			<button id="AlertClose" onclick="$('Alert').hidden = true">OK</button>
+		</div>
+	</div>
 
 </body>
 
