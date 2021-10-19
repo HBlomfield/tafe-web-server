@@ -67,10 +67,18 @@ const hashKey = "lorem ipsum";
 const acceptedHost = "localhost:3000";
 const serverHost = "localhost";
 
+// const sslOptions = {
+// 	key: fs.readFileSync("site/config/ssl/localhost.decrypted.key"),
+// 	cert: fs.readFileSync("site/config/ssl/localhost.crt")
+// };
 const sslOptions = {
-	key: fs.readFileSync("site/config/ssl/localhost.decrypted.key"),
-	cert: fs.readFileSync("site/config/ssl/localhost.crt")
+	key: fs.readFileSync('site/config/ssl/key.pem', 'utf-8').toString(),
+	cert: fs.readFileSync('site/config/ssl/server.crt', 'utf-8').toString(),
+	// ciphers: 'ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES256-SHA384',
+	// honorCipherOrder: true,
+	// secureProtocol: 'TLSv1_2_method'
 };
+
 // although the thunder client and such works, there are issues when using curl. Probably wont be a great idea to use openSSL when hosting, cloudflare or something would be used instead
 const server = http.createServer(sslOptions, (request, response) => IndexProcess(request, response));
 
@@ -464,6 +472,8 @@ class CRUD { // class to access the database
 var crud = new CRUD();
 
 async function IndexProcess(req, res) {
+	// remove this later
+	res.setHeader("Access-Control-Allow-Origin", "*");
 	// await crud.GetPublicUserInfo('');
 	// await crud.GetUserRelation('a00e8530167659caaaf2','ad43fae0aa1720c60b63');
 	function Stop(code, message) {
@@ -557,10 +567,10 @@ async function IndexProcess(req, res) {
 	}
 	//#endregion
 	//#region origin blocking
-	if (req.headers["host"] != acceptedHost) { // if coming from terminal (and sketchy user forgets the origin), or coming from a fake website, block the request and send a 401
-		$(terminal.danger + "Request is not from an acceptable host");
-		return Stop(403);
-	}
+	// if (req.headers["host"] != acceptedHost) { // if coming from terminal (and sketchy user forgets the origin), or coming from a fake website, block the request and send a 401
+	// 	$(terminal.danger + "Request is not from an acceptable host");
+	// 	return Stop(403);
+	// }
 	if (fs.existsSync(blockedPath + req.connection.remoteAddress)) { // the blocked IP addresses only contain the time they can be unblocked, or -1 for permabans
 		$(terminal.danger + "Request is coming from a previously blocked IP address");
 		let unblockTime = Number(fs.readFileSync(blockedPath + req.connection.remoteAddress));
