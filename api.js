@@ -64,8 +64,8 @@ const mysql = require("mysql");
 
 // const hashKey = crypto.generateKey("hmac",{length:64}); // generate a cryto key (because this is generated every time, I can this only being a temporary solution)
 const hashKey = "lorem ipsum";
-const acceptedHost = "localhost:3000";
-const serverHost = "localhost";
+// const acceptedHost = "localhost:3000";
+const serverHost = "";
 
 // const sslOptions = {
 // 	key: fs.readFileSync("site/config/ssl/localhost.decrypted.key"),
