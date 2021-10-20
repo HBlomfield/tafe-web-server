@@ -1,0 +1,45 @@
+	{
+		"name": "Draw All",
+		"short_name": "Draw*",
+		"start_url": "/public/index.html",
+		"display": "standalone",
+		"background_color": "#000",
+		"description": "A drawing based social media.",
+		"icons": [{
+			"src": "/public/home-icons/32x32.png",
+			"sizes": "32x32",
+			"type": "image/png"
+		}, {
+			"src": "/public/home-icons/32x32.png",
+			"sizes": "48x48",
+			"type": "image/png"
+		}, {
+			"src": "/public/home-icons/64x64.png",
+			"sizes": "64x64",
+			"type": "image/png"
+		}, {
+			"src": "/public/home-icons/80x80.png",
+			"sizes": "80x80",
+			"type": "image/png"
+		}, {
+			"src": "/public/home-icons/96x96.png",
+			"sizes": "96x96",
+			"type": "image/png"
+		}, {
+			"src": "/public/home-icons/144x144.png",
+			"sizes": "144x144",
+			"type": "image/png"
+		}, {
+			"src": "/public/home-icons/152x152.png",
+			"sizes": "152x152",
+			"type": "image/png"
+		}, {
+			"src": "/public/home-icons/167x167.png",
+			"sizes": "167x167",
+			"type": "image/png"
+		}, {
+			"src": "/public/home-icons/180x180.png",
+			"sizes": "180x180",
+			"type": "image/png"
+		}]
+	}
