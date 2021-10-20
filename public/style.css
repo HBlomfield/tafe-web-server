@@ -1069,11 +1069,11 @@ article.FeedEnd h1 {
 	outline:1px solid var(--PostOutline);
 }
 /* #endregion */
-#ValidatePage>h2 {
+#VerifyPage>h2 {
 	padding:8px;
 	font-weight:normal;
 }
-#ValidatePage>button{
+#VerifyPage>button{
 	margin:8px auto;
 	display:block;
 	font-weight:normal;
@@ -1087,7 +1087,7 @@ article.FeedEnd h1 {
 	width:50%;
 	outline:1px solid var(--BarSeperator);
 }
-#ValidatePage>input {
+#VerifyPage>input {
 	text-align:center;
 	display:block;
 	margin:32px auto 8px;

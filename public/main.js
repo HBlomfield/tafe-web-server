@@ -1,3 +1,11 @@
+const hostURL = window.location.href.slice(0, -18);
+function LoadServiceWorker() {
+	navigator.serviceWorker.register("/public/serviceWorker.js").then(registration => {
+		// console.log(registration);
+	}, (err) => console.log(err));
+	// console.log("service worker added");
+}
+
 function $(ID) { // I always thought the $ used in jquery was some magic thing, but apparently you can just use $ as a name for functions
 	return document.getElementById(ID);
 }
@@ -208,10 +216,11 @@ let localUserName = localStorage.getItem("localUserName");
 let localUserData = localStorage.getItem("localUserData");
 let localUserBio = localStorage.getItem("localUserBio");
 let localUserDate = localStorage.getItem("localUserDate");
+let localUserVerified = localStorage.getItem("localUserVerified");
 
 if (localUserEmail) {
 	// Alert("You are already logged in.", OptionsPage, "OK");
-	
+
 	// localUserEmail = data.email;
 	// localUserData = data.data;
 	// localUserBio = data.bio;
@@ -222,19 +231,26 @@ if (localUserEmail) {
 	// localStorage.setItem("localUserName", localUserName)
 	$("OptionsUserEmail").innerHTML = localUserEmail;
 	$("OptionsUserName").innerHTML = localUserName;
-	console.log(localUserName);
-	if (localUserData) renderImage($("OptionsUserIcon"), localUserData, 96,96);
+	// console.log(localUserName);
+	if (localUserData) renderImage($("OptionsUserIcon"), localUserData, 96, 96);
 	$("OptionsLoggedIn").hidden = true;
 	$("OptionsUser").hidden = false;
 	$("OptionsLoginButton").hidden = true;
 	$("OptionsRegisterButton").hidden = true;
 	$("OptionsLogoutButton").hidden = false;
+	if (localUserVerified == "1") {
+		$("OptionsVerifyButton").hidden = true;
+	} else {
+		$("OptionsVerifyButton").hidden = false;
+	}
 } else {
 	$("OptionsUser").hidden = true;
 	$("OptionsLoggedIn").hidden = false;
 	$("OptionsLoginButton").hidden = false;
 	$("OptionsRegisterButton").hidden = false;
 	$("OptionsLogoutButton").hidden = true;
+	$("OptionsVerifyButton").hidden = true;
+
 
 }
 // }
@@ -245,7 +261,7 @@ let isDark = localStorage.getItem("isDark") ?? "false";
 if (isDark == "false") isDark = "false";
 else isDark = "true";
 
-if (isDark=="true") {
+if (isDark == "true") {
 	$("OptionsDarkMode").innerHTML = "<div>On</div><i class='bi bi-check-square'></i>";
 	document.body.parentNode.className = "dark " + colour;
 } else document.body.parentNode.className = "" + colour;
@@ -350,6 +366,7 @@ function CloseAllPages() {
 	$("SingleUserPage").hidden = true;
 	$("LoginPage").hidden = true;
 	$("RegisterPage").hidden = true;
+	$("VerifyPage").hidden = true;
 	$("OptionsPage").hidden = true;
 	$("OptionsButton").childNodes[0].className = "bi bi-gear";
 	$("MyGroups").hidden = true;
@@ -405,7 +422,12 @@ function RegisterPage() {
 	$("OptionsButton").childNodes[0].className = "bi bi-gear-fill active";
 	$("RegisterPage").hidden = false;
 }
-
+function VerifyPage () {
+	$("NavbarTitle").innerHTML = "Verify";
+	CloseAllPages()
+	$("OptionsButton").childNodes[0].className = "bi bi-gear-fill active";
+	$("VerifyPage").hidden = false;
+}
 function OptionsPage() {
 	$("TabbarIcons").children[0].children[0].className = "bi bi-grid-1x2";
 	$("TabbarIcons").children[0].className = "";
@@ -447,7 +469,7 @@ function ToggleDarkMode() {
 
 function UpdateTheme() {
 	colour = $("OptionsPrimaryColour").value;
-	if (isDark=="true") document.body.parentNode.className = "dark " + colour;
+	if (isDark == "true") document.body.parentNode.className = "dark " + colour;
 	else document.body.parentNode.className = "" + colour;
 	localStorage.setItem("colour", colour);
 }
@@ -455,13 +477,13 @@ function UpdateTheme() {
 function Login() {
 	if (/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test($("LoginEmail").value)) { // the defacto email regexp
 		if ($("LoginPassword").value != "" && $("LoginPassword").value !== undefined) {
-			fetch("https://localhost:3000/api/user/login/", {
+			fetch(hostURL + "/api/user/login/", {
 				method: "POST",
 				body: JSON.stringify({
 					"email": $("LoginEmail").value,
 					"password": $("LoginPassword").value
 				})
-			}).then((response) => response.json()).then ((data)=>{
+			}).then((response) => response.json()).then((data) => {
 				// if (response.status == 409) {
 				// 	Alert("You are already logged in!", OptionsPage, "OK");
 				// 	loggedIn = true;
@@ -472,26 +494,36 @@ function Login() {
 				// 	Alert("Email or password was missing somehow.");
 				// }
 				if (data.message == "ALREADY_LOGGED_IN" || data.message == "LOGIN_CORRECT") {
-					
+
 					if (data.message == "ALREADY_LOGGED_IN") Alert("You are already logged in.", OptionsPage, "OK");
-					else Alert("Logged in as " + data.email, OptionsPage, "OK");
+					else Alert("Logged in as " + data.email + ".", OptionsPage, "OK");
 					localUserEmail = data.email;
 					localUserData = data.data;
 					localUserBio = data.bio ?? "";
 					localUserName = data.username;
+					localUserVerified = data.verified.toString();
 					localStorage.setItem("localUserEmail", localUserEmail)
 					localStorage.setItem("localUserData", localUserData)
 					localStorage.setItem("localUserBio", localUserBio)
 					localStorage.setItem("localUserName", localUserName)
+					localStorage.setItem("localUserVerified", localUserVerified);
+					if (localUserVerified == "1") {
+						$("OptionsVerifyButton").hidden = true;
+					}else {
+						$("OptionsVerifyButton").hidden = false;
+					}
 					$("OptionsUserEmail").innerHTML = localUserEmail;
 					$("OptionsUserName").innerHTML = localUserName;
-					renderImage($("OptionsUserIcon"), localUserData, 96,96);
+					renderImage($("OptionsUserIcon"), localUserData, 96, 96);
 					$("OptionsLoggedIn").hidden = true;
 					$("OptionsUser").hidden = false;
 					$("OptionsLoginButton").hidden = true;
 					$("OptionsRegisterButton").hidden = true;
 					$("OptionsLogoutButton").hidden = false;
+					
 				};
+			}).catch (function () {
+				Alert("Login failed. Connect to the internet or try again later.");
 			});
 		} else {
 			Alert("No password was given.")
@@ -499,7 +531,7 @@ function Login() {
 	} else if ($("LoginEmail").value == "" || $("LoginEmail").value === undefined) {
 		Alert("No email was given.");
 	} else {
-		Alert("Email was incorrect");
+		Alert("Email was incorrect.");
 	}
 }
 
@@ -510,7 +542,7 @@ function Register() {
 				if ($("RegisterPassword").value != "" && $("RegisterPassword").value !== undefined) {
 					if ($("RegisterRetype").value != "" && $("RegisterPassword").value !== undefined) {
 						if ($("RegisterRetype").value == $("RegisterPassword").value) {
-							fetch("https://localhost:3000/api/user/register/", {
+							fetch(hostURL + "/api/user/register/", {
 								method: "POST",
 								body: JSON.stringify({
 									"email": $("RegisterEmail").value,
@@ -535,13 +567,15 @@ function Register() {
 									localUserData = data.data;
 									localUserBio = data.bio ?? "";
 									localUserName = data.username;
+									localUserName = data.verified;
 									localStorage.setItem("localUserEmail", localUserEmail)
 									localStorage.setItem("localUserData", localUserData)
 									localStorage.setItem("localUserBio", localUserBio)
 									localStorage.setItem("localUserName", localUserName)
+									localStorage.setItem("localUserVerified", localUserVerified)
 									$("OptionsUserEmail").innerHTML = localUserEmail;
 									$("OptionsUserName").innerHTML = localUserName;
-									if (data.data) renderImage($("OptionsUserIcon"), localUserData, 96,96);
+									if (data.data) renderImage($("OptionsUserIcon"), localUserData, 96, 96);
 									$("OptionsLoggedIn").hidden = true;
 									$("OptionsUser").hidden = false;
 									$("OptionsLoginButton").hidden = true;
@@ -549,7 +583,7 @@ function Register() {
 									$("OptionsLogoutButton").hidden = false;
 								};
 								if (data.message == "REGISTER_SUCCESS") {
-									Alert("Registered " + localUserEmail, OptionsPage, "OK");
+									Alert("Registered " + localUserEmail + ".", OptionsPage, "OK");
 									localUserEmail = $("RegisterEmail").value;
 									localUserName = $("RegisterUsername").value;
 									localUserData = "";
@@ -558,6 +592,7 @@ function Register() {
 									localStorage.setItem("localUserName", localUserName)
 									localStorage.setItem("localUserData", localUserData)
 									localStorage.setItem("localUserBio", localUserBio)
+									localStorage.setItem("localUserVerified", localUserVerified)
 									
 									$("OptionsUserEmail").innerHTML = localUserEmail;
 									$("OptionsUserName").innerHTML = localUserName;
@@ -567,7 +602,10 @@ function Register() {
 									$("OptionsLoginButton").hidden = true;
 									$("OptionsRegisterButton").hidden = true;
 									$("OptionsLogoutButton").hidden = false;
+									$("OptionsVerifyButton").hidden = true;
 								};
+							}).catch (function () {
+								Alert("Registration failed. Connect to the internet or try again later.");
 							})
 						} else {
 							Alert("Retyped password does not match the original.")
@@ -592,7 +630,7 @@ function Register() {
 }
 
 function Logout() {
-	fetch("https://localhost:3000/api/user/logout/", {
+	fetch(hostURL + "/api/user/logout/", {
 		method: "POST"
 	}).then((response) => {
 		if (response.status == 200) {
@@ -600,19 +638,51 @@ function Logout() {
 			localUserName = "";
 			localUserData = "";
 			localUserBio = "";
+			localUserVerified = "";
 			localStorage.removeItem("localUserEmail");
-			localStorage.removeItem("localUserUsername");
+			localStorage.removeItem("localUserName");
 			localStorage.removeItem("localUserBio");
 			localStorage.removeItem("localUserData");
+			localStorage.removeItem("localUserVerified");
 			Alert("You are now logged out.");
 			$("OptionsUser").hidden = true;
 			$("OptionsLoggedIn").innerHTML = "Not logged in."
 			$("OptionsLoggedIn").hidden = false;
 			$("OptionsLoginButton").hidden = false;
 			$("OptionsRegisterButton").hidden = false;
+			$("OptionsVerifyButton").hidden = true;
 			$("OptionsLogoutButton").hidden = true;
 		}
+	}).catch (function () {
+		Alert("Logout failed. Connect to the internet or try again later.");
 	});
+}
+
+function VerifyUser () {
+	if (/^[a-f0-9]{6}$/.test($("VerifyCode").value)) {
+		fetch (hostURL + "/api/user/verify/", {
+			method: "POST",
+			body :JSON.stringify({"verificationCode":$("VerifyCode").value})
+		}).then (response=> response.json()).then ( data=> {
+			if (data.message == "VERIFY_INVALID_CODE") Alert("Verification code is invalid.");
+			if (data.message == "VERIFY_NO_CODE") Alert("Verificaton code is missing.");
+			if (data.message == "VERIFY_NO_LOGIN") Alert("You aren't currently logged in.");
+			if (data.message == "VERIFY_CONFLICT") Alert("Your account is already verified.");
+			if (data.message == "VERIFY_INCORRECT_CODE") Alert("Your verification code was incorrect.");
+			if (data.message == "VERIFY_SUCCESS") {
+				Alert("Your account has been verified, you are now free to post.", OptionsPage, "OK");
+				localUserVerified = "1";
+				localStorage.setItem("localUserVerified", localUserVerified);
+				$("OptionsVerifyButton").hidden = true;
+			}
+		}).catch (function () {
+			Alert("Verification failed. Connect to the internet or try again later.");
+		})
+	} else if ($("VerifyCode").value != "" || $("VerifyCode").value !== undefined){
+		Alert("Verification code is invalid.");
+	} else {
+		Alert ("Verification code is invalid.");
+	}
 }
 
 let explorePosts = [];
@@ -625,7 +695,7 @@ function ExplorePage() { // at the moment this is just selects a bit of data fro
 	CloseAllPages()
 	$("ExplorePage").hidden = false;
 	$("ExplorePageLoading").hidden = false;
-	fetch("https://localhost:3000/api/post/", {
+	fetch(hostURL + "/api/post/", {
 		method: "GET"
 	}).then((response) => response.json()).then((data) => {
 		$("ExplorePageLoading").hidden = true;
@@ -634,7 +704,10 @@ function ExplorePage() { // at the moment this is just selects a bit of data fro
 			newPost.render($("ExplorePage"));
 			explorePosts.push(newPost);
 		}
-	}).catch();
+	}).catch(function () {
+		$("ExplorePageLoading").hidden = true;
+		Alert("Explore page could not be loaded.");
+	});
 
 }
 let myGroups = [];
@@ -648,13 +721,13 @@ function MyGroupsPage() { // ge thte user's groups as well as the ones that they
 	$("MyGroups").hidden = false;
 	$("MyGroupsLoading").hidden = false;
 
-	fetch("https://localhost:3000/api/me/groups/", {
+	fetch(hostURL + "/api/me/groups/", {
 		method: "GET"
 	}).then((response) => response.json()).then((data) => {
 		if (data["message"] !== undefined && data["message"] == "NOT_SIGNED_IN") {
 			Alert("You must be logged in to view your groups.", OptionsPage, "Log In")
 		}
-		console.log(data);
+		// console.log(data);
 		$("MyGroupsLoading").hidden = true;
 		// if (data["message"] == "USER_NOT_FOUND") {
 		// $("Alert").show();
@@ -667,7 +740,8 @@ function MyGroupsPage() { // ge thte user's groups as well as the ones that they
 			newGroup.render($("MyGroups"));
 		}
 	}).catch(function () {
-		return null
+		Alert("Your groups could not be loaded.");
+		$("MyGroupsLoading").hidden = true;
 	});
 }
 
@@ -701,7 +775,7 @@ function OpenPost(post, addToHistory) {
 	$("SinglePostPage").hidden = false;
 	$("SinglePostCommentsHeader").innerHTML = post.commentCount + " Replies";
 	if (post.commentCount == 1) $("SinglePostCommentsHeader").innerHTML = "1 Reply"; // grammar
-	fetch("https://localhost:3000/api/post/" + post.ID + "/", { // in the future, instead of sending an object with all of the posts that includes their data, send an array like ['0123', '4567', 'etc'] that the server can fetch for each post individually - or in sections - instead of all at once
+	fetch(hostURL + "/api/post/" + post.ID + "/", { // in the future, instead of sending an object with all of the posts that includes their data, send an array like ['0123', '4567', 'etc'] that the server can fetch for each post individually - or in sections - instead of all at once
 		method: "GET"
 	}).then(response => response.json()).then((data) => { // the usual fetch json
 		$("SinglePostCommentsLoading").hidden = true;
@@ -712,9 +786,11 @@ function OpenPost(post, addToHistory) {
 			newReply.render($("SinglePostComments"));
 			currentSinglePostReplies.push(newReply); // there isnt a 100% reason that these posts are inside an array, considering this array isn't accessed... might need to rethink
 		}
-	}).catch(
+	}).catch(function () {
+		Alert("Post replies could not be loaded.");
+		$("SinglePostCommentsLoading").hidden = true;
 		//couldn't connect to server
-	);
+	});
 
 	// let group = new Group($("SinglePostGroupHolder"), post.group.ID, post.group.name, post.group.data, post.group.description, post.group.date, post.group.user
 }
@@ -750,7 +826,7 @@ function OpenGroup(group, addToHistory) {
 	group.user.render($("SingleGroupOwnerHolder"));
 	if (group.data != null) renderImage($("SingleGroupCanvas"), group.data, 96, 96);
 
-	fetch("https://localhost:3000/api/group/" + group.ID + "/", {
+	fetch(hostURL + "/api/group/" + group.ID + "/", {
 		method: "GET"
 	}).then((response) => response.json()).then((data) => {
 		$("SingleGroupPostsLoading").hidden = true;
@@ -767,7 +843,10 @@ function OpenGroup(group, addToHistory) {
 			currentSingleGroupUsers.push(newUser);
 			newUser.render($("SingleGroupUserHolder"));
 		}
-	}).catch()
+	}).catch(function () {
+		Alert("Group posts could not be loaded.")
+		$("SingleGroupPostsLoading").hidden = true;
+	})
 }
 
 
@@ -809,7 +888,7 @@ function OpenUser(user, addToHistory) {
 
 	if (user.data != null) renderImage($("SingleUserCanvas"), user.data, 96, 96);
 
-	fetch("https://localhost:3000/api/user/" + user.userID + "/", {
+	fetch(hostURL + "/api/user/" + user.userID + "/", {
 		method: "GET"
 	}).then((response) => response.json()).then((data) => {
 		$("SingleUserPostsLoading").hidden = true;

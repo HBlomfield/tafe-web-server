@@ -2,7 +2,7 @@
 	PART A
 
 	O Implemented as a mobile-only app
-	Manifest file contains relevant objects the App will need
+	O Manifest file contains relevant objects the App will need
 	O Use of custom design components that are initially devoid of user-requested data
 	O Third Party interactive components used in implementation
 	O User-selectalbe theme 
@@ -10,36 +10,35 @@
 PART B
 
 	O Form Validation of all input fields
-	AJAX implemented for at least four get and four post actions
+	O AJAX implemented for at least four get and four post actions
 		GET
 			- O Explore page (all posts)
 			- O Single Post (and comments)
 			- O All posts from a group
 			- O User Info + All posts from a user
-			- 
 		POST
 			- O Login
 			- O Logout
 			- O Register
-			- O 
+			- O Validate
 		
 	O Data interchange format between App and RESTful web service using JSON
 	O Use of Fetch API to implement AJAX communication
-	O - localstorage stores theme, dark mode and if user is logged in - localStorage demonstrated remembering user actions, and app reload is contextually remembered at least three (3)
-	Service Worker to cache HTML/CSS/JS objects in-browser, and able to load without the network being present
+	O localstorage stores theme, dark mode and if user is logged in - localStorage demonstrated remembering user actions, and app reload is contextually remembered at least three (3)
+	O Service Worker to cache HTML/CSS/JS objects in-browser, and able to load without the network being present
 
 PART C
 
-	Icon for app in manifest
+	O Icon for app in manifest
 	O Generous use of glyphs found in layout framework for forms and menus
 	O Temporary loading screen (spinner) overlayed on display before JSON objects are rendered from Web Service
 
 PART D
 
-	Screen Shot of Performance tab in DevTools
-	Screen shot showing AJAX (network tab)
-	localStorage (application tab) inside devtools to prove app works
-	PWA audit completed under audits tab
+	O Screen Shot of Performance tab in DevTools
+	O Screen shot showing AJAX (network tab)
+	O localStorage (application tab) inside devtools to prove app works
+	~ PWA audit completed under audits tab
 
  -->
 
@@ -50,17 +49,30 @@ PART D
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="/public/style.css">
+	<meta name="theme-color" content="#000">
+	
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<link rel="apple-touch-icon" href="/public/home-icons/180x180.png">
+	<link rel="apple-touch-icon" sizes="152x152" href="/public/home-icons/152x152.png">
+	<link rel="apple-touch-icon" sizes="180x180" href="/public/home-icons/180x180.png">
+	<link rel="apple-touch-icon" sizes="167x167" href="/public/home-icons/167x167.png">
+	<link rel="apple-touch-startup-image" href="/public/home-icons/180x180.png">
+	<meta name="apple-mobile-web-app-title" content="Draw*">
+
+	<link rel="manifest" href="/public/manifest.json">
+	<link rel="icon" href="/public/favicon.ico" type="image/x-icon">
 	<script src="/public/main.js" defer></script>
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="/public/style.css">
+	<link rel="stylesheet" href="/public/bi/bootstrap-icons.css">
 	<title>Document</title>
 </head>
 
-<body class="">
+<body class="" onload="LoadServiceWorker ()">
+	<script>console.log()</script>
 	<header id="Navbar">
-		<button id="BackButton" onclick="GoBack()"><i class="bi bi-arrow-left"></i></button>
+		<button name="back button" id="BackButton" onclick="GoBack()"><i class="bi bi-arrow-left"></i></button>
 		<div id="NavbarTitle">Page Title</div>
-		<button onclick="OptionsPage()" id="OptionsButton"><i class="bi bi-gear"></i></button>
+		<button name = "open options menu" onclick="OptionsPage()" id="OptionsButton"><i class="bi bi-gear"></i></button>
 	</header>
 
 	<main id="Main">
@@ -94,11 +106,12 @@ PART D
 			</figure>
 			
 			<h2 id="OptionsLoggedIn">Not logged in</h2>
-			<button id="OptionsLoginButton" onclick="LoginPage()">Login</button>
-			<button id="OptionsRegisterButton" onclick="RegisterPage()">Register</button>
-			<button id="OptionsLogoutButton" onclick="Logout()">Logout</button>
+			<button name = "login" id="OptionsLoginButton" onclick="LoginPage()">Login</button>
+			<button name = "register" id="OptionsRegisterButton" onclick="RegisterPage()">Register</button>
+			<button name = "logout" id="OptionsLogoutButton" onclick="Logout()">Logout</button>
+			<button name = "verify" id="OptionsVerifyButton" onclick="VerifyPage()">Verify Account</button>
 			<label>Primary Colour</label>
-			<select id="OptionsPrimaryColour" oninput="UpdateTheme()">
+			<select name="theme colour" id="OptionsPrimaryColour" oninput="UpdateTheme()">
 				<option value="primary-red">Red</option>
 				<option value="primary-orange">Orange</option>
 				<option value="primary-yellow">Yellow</option>
@@ -109,7 +122,7 @@ PART D
 				<option value="primary-grey">Grey</option>
 			</select>
 			<label>Dark Mode</label>
-			<button id="OptionsDarkMode" onclick="ToggleDarkMode(); UpdateTheme()">
+			<button name = "toggle dark mode" id="OptionsDarkMode" onclick="ToggleDarkMode(); UpdateTheme()">
 				<div>Off</div><i class="bi bi-square"></i>
 			</button>
 		</section>
@@ -121,14 +134,14 @@ PART D
 				<label>Password</label>
 				<input id="LoginPassword" placeholder="The password used for your account."
 					title="The password used for your account." type="password">
-				<button onclick="Login()">Log in</button>
+				<button name = "submit login" onclick="Login()">Log in</button>
 			</div>
 		</section>
-		<section id="ValidatePage" hidden>
+		<section id="VerifyPage" hidden>
 			<h2>The validation code would be sent to your email address. If you haven't received it yet, you may need to check your junk mail or send the email again.</h2>
-			<button onclick="Alert(`This doesn't do anything right now...`)">Send Again</button>
-			<input id="ValidationCode" maxlength="6">
-			<button>Validate</button>
+			<button name="resend email" onclick="Alert(`This doesn't do anything right now...`)">Send Again</button>
+			<input id="VerifyCode" maxlength="6">
+			<button name = "validate user" onclick="VerifyUser()">Validate</button>
 		</section>
 		<section id="RegisterPage" hidden>
 			<div>
@@ -147,7 +160,7 @@ PART D
 				<label>Retype Password</label>
 				<input id="RegisterRetype" placeholder="The same password again." title="The same password again."
 					type="password">
-				<button onclick="Register()">Register</button>
+				<button name = "register account" onclick="Register()">Register</button>
 			</div>
 		</section>
 		<section id="SinglePostPage" hidden>
@@ -244,18 +257,17 @@ PART D
 	<footer id="Tabbar">
 		<h2 id="PageIntro" class="exit">Explore</h2>
 		<div id="TabbarIcons">
-			<button class="active" onclick="TabbarPage(0, this)"><i class="bi bi-grid-1x2-fill"></i></button>
-			<button onclick="TabbarPage(1, this)"><i class="bi bi-house"></i></button>
-			<button onclick="TabbarPage(2, this)"><i class="bi bi-pencil"></i></button>
-			<button onclick="TabbarPage(3, this)"><i class="bi bi-people"></i></button>
+			<button name="explore" class="active" onclick="TabbarPage(0, this)"><i class="bi bi-grid-1x2-fill"></i></button>
+			<button name="groups" onclick="TabbarPage(1, this)"><i class="bi bi-house"></i></button>
+			<button name="draw" onclick="TabbarPage(2, this)"><i class="bi bi-pencil"></i></button>
+			<button name="friends" onclick="TabbarPage(3, this)"><i class="bi bi-people"></i></button>
 		</div>
 	</footer>
-
 	<div id="Alert" hidden>
 		<div id="AlertBox">
 			<h1 id="AlertText"></h1>
-			<button id="AlertFunc">OK</button>
-			<button id="AlertClose" onclick="$('Alert').hidden = true">OK</button>
+			<button name="alert function button" id="AlertFunc">OK</button>
+			<button name="alert close button"id="AlertClose" onclick="$('Alert').hidden = true">OK</button>
 		</div>
 	</div>
 

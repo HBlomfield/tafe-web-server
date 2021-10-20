@@ -56,7 +56,7 @@ function $(value) { // lets just make this function here for the sake of quickne
 }
 //#endregion
 //#region packages
-const http = require("https");
+const http = require("http");
 const fs = require("fs");
 const crypto = require("crypto");
 const mysql = require("mysql");
@@ -64,23 +64,23 @@ const mysql = require("mysql");
 
 // const hashKey = crypto.generateKey("hmac",{length:64}); // generate a cryto key (because this is generated every time, I can this only being a temporary solution)
 const hashKey = "lorem ipsum";
-// const acceptedHost = "localhost:3000";
+const acceptedHost = "localhost:3000";
 const serverHost = "localhost";
 
 // const sslOptions = {
 // 	key: fs.readFileSync("site/config/ssl/localhost.decrypted.key"),
 // 	cert: fs.readFileSync("site/config/ssl/localhost.crt")
 // };
-const sslOptions = {
-	key: fs.readFileSync('site/config/ssl/key.pem', 'utf-8').toString(),
-	cert: fs.readFileSync('site/config/ssl/server.crt', 'utf-8').toString(),
-	// ciphers: 'ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES256-SHA384',
-	// honorCipherOrder: true,
-	// secureProtocol: 'TLSv1_2_method'
-};
+// const sslOptions = {
+// 	key: fs.readFileSync('site/config/ssl/key.pem', 'utf-8').toString(),
+// 	cert: fs.readFileSync('site/config/ssl/server.crt', 'utf-8').toString(),
+// 	// ciphers: 'ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES256-SHA384',
+// 	// honorCipherOrder: true,
+// 	// secureProtocol: 'TLSv1_2_method'
+// };
 
 // although the thunder client and such works, there are issues when using curl. Probably wont be a great idea to use openSSL when hosting, cloudflare or something would be used instead
-const server = http.createServer(sslOptions, (request, response) => IndexProcess(request, response));
+const server = http.createServer( /*sslOptions,*/ (request, response) => IndexProcess(request, response));
 
 const accessPath = "site/IP/access/";
 const blockedPath = "site/IP/blocked/";
@@ -473,13 +473,15 @@ var crud = new CRUD();
 
 async function IndexProcess(req, res) {
 	// remove this later
-	res.setHeader("Access-Control-Allow-Origin", "*");
+	res.setHeader("Access-Control-Allow-Origin", "localhost");
 	// await crud.GetPublicUserInfo('');
 	// await crud.GetUserRelation('a00e8530167659caaaf2','ad43fae0aa1720c60b63');
 	function Stop(code, message) {
 		res.statusCode = code;
 		if (res.statusCode > 199 && res.statusCode < 299) {
 			$(terminal.note + terminal.indent + "Code " + terminal.success + code + terminal.note + " was sent");
+		} else if (res.statusCode > 299 && res.statusCode < 399) {
+			$(terminal.note + terminal.indent + "Code " + terminal.info + code + terminal.note + " was sent");
 		} else {
 			$(terminal.note + terminal.indent + "Code " + terminal.danger + code + terminal.note + " was sent");
 		}
@@ -518,7 +520,10 @@ async function IndexProcess(req, res) {
 		$(terminal.info + "User is requesting a site element");
 		let reqFile = "/"
 		if (req.url == "/" || req.url == "/index.html") { // if the user is trying to access the main site, send the index
-			reqFile = "public/index.html";
+			// reqFile = "public/index.html";
+			res.setHeader("Location", "/public/index.html");
+			$(terminal.info + "Index was requested, so redirected to /public/index.html")
+			return Stop(308)
 		} else {
 			reqFile = req.url.slice(1); // remove the / at the start because the folder name needs to come before the /
 		}
@@ -750,13 +755,13 @@ async function IndexProcess(req, res) {
 			let result = await crud.GetUser(false, session.values.UserID);
 			// console.log(result);
 			res.write(JSON.stringify({
-				"username":result[0].DisplayName,
-				"email":result[0].Email,
-				"data":result[0].DisplayIcon,
-				"bio":result[0].DisplayBio,
-				"date":result[0].JoinedOn,
-				"message":"ALREADY_LOGGED_IN",
-				
+				"username": result[0].DisplayName,
+				"email": result[0].Email,
+				"data": result[0].DisplayIcon,
+				"bio": result[0].DisplayBio,
+				"date": result[0].JoinedOn,
+				"message": "ALREADY_LOGGED_IN",
+
 			}));
 			return Stop(409) // send a 409, conflict
 		}
@@ -817,7 +822,8 @@ async function IndexProcess(req, res) {
 				username: result[0]["DisplayName"],
 				data: result[0]["DisplayIcon"],
 				bio: result[0]["DisplayBio"],
-				message:"LOGIN_CORRECT"
+				verified: result[0]["IsVerified"],
+				message: "LOGIN_CORRECT"
 			}));
 			return Stop(200)
 		} else {
@@ -891,7 +897,7 @@ async function IndexProcess(req, res) {
 		res.write(JSON.stringify({
 			email: requestJSON["email"],
 			username: requestJSON["displayName"],
-			message:"REGISTER_SUCCESS"
+			message: "REGISTER_SUCCESS"
 		}));
 		return Stop(200);
 	}
@@ -921,7 +927,7 @@ async function IndexProcess(req, res) {
 			$(terminal.danger + "User is already verified");
 			return Stop(409, "VERIFY_CONFLICT"); // trying to verify verified account
 		}
-		$(result[0]["VerificationCode"], requestJSON["verificationCode"])
+		// $(result[0]["VerificationCode"], requestJSON["verificationCode"])
 		if (result[0]["VerificationCode"] == requestJSON["verificationCode"]) { // verification code matches the client verification code
 			$(terminal.success + "Verification code is correct");
 			await crud.VerifyUser(session.values["UserID"]); // set the verified value of the user account to 1
