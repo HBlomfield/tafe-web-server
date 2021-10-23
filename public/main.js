@@ -479,6 +479,7 @@ function Login() {
 		if ($("LoginPassword").value != "" && $("LoginPassword").value !== undefined) {
 			fetch(hostURL + "/api/user/login/", {
 				method: "POST",
+				credentials:"include",
 				body: JSON.stringify({
 					"email": $("LoginEmail").value,
 					"password": $("LoginPassword").value
@@ -498,7 +499,7 @@ function Login() {
 					if (data.message == "ALREADY_LOGGED_IN") Alert("You are already logged in.", OptionsPage, "OK");
 					else Alert("Logged in as " + data.email + ".", OptionsPage, "OK");
 					localUserEmail = data.email;
-					localUserData = data.data;
+					localUserData = data.data ?? "";
 					localUserBio = data.bio ?? "";
 					localUserName = data.username;
 					localUserVerified = data.verified.toString();
@@ -522,9 +523,9 @@ function Login() {
 					$("OptionsLogoutButton").hidden = false;
 					
 				};
-			}).catch (function () {
+			})/*.catch (function () {
 				Alert("Login failed. Connect to the internet or try again later.");
-			});
+			});*/
 		} else {
 			Alert("No password was given.")
 		}
@@ -564,7 +565,7 @@ function Register() {
 								if (data.message == "ALREADY_LOGGED_IN") {
 									Alert("Registered " + data.email + ".", OptionsPage, "OK");
 									localUserEmail = data.email;
-									localUserData = data.data;
+									localUserData = data.data ?? "";
 									localUserBio = data.bio ?? "";
 									localUserName = data.username;
 									localUserName = data.verified;

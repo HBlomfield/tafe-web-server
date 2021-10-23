@@ -97,6 +97,8 @@ const contentTypes = {
 	"gif": "image/gif"
 }
 
+const admins = ["ad43fae0aa1720c60b63", "897f776d347ee6748072"];
+
 // we put this at the top cuz thats where it belongs
 class Session { // class to manage the user's cookies and sessions
 	constructor(requestObject, responseObject) {
@@ -136,7 +138,7 @@ class Session { // class to manage the user's cookies and sessions
 		$(terminal.info + "Creating Session...")
 		this.cookie = crypto.randomBytes(20).toString('hex') // make a new cookie of 40 characters in length (caused a bit of frustration because it was assumed 1 byte = 1 char)
 		// having 40 characters is almost certainly over-blown, especially because the user ids only have 10 characters, but even 1 mismatched cookie could ruin someone's day. I'll probably add some more characters to the user ids
-		this.res.setHeader("Set-Cookie", `session=${this.cookie};path=/;httpOnly;max-age=31557600;sameSite=strict;`); // max age is equal to 365 days, although it is optional, it doesn't seem to be sent if it has no max age (browser assumes max-age=0 ?)
+		this.res.setHeader("Set-Cookie", `session=${this.cookie};path=/;httpOnly;max-age=31557600;sameSite=lax;`); // max age is equal to 365 days, although it is optional, it doesn't seem to be sent if it has no max age (browser assumes max-age=0 ?)
 		// fs.writeFileSync(sessionPath + this.cookie, JSON.stringify(newData)); // store the session variables on the session file, alternatively the session could be created with nothing in it, values would be given to it and then updated to the file. That might be better
 	}
 	Update() {
@@ -154,6 +156,7 @@ class Session { // class to manage the user's cookies and sessions
 		}
 	}
 }
+
 
 const configSQL = {
 	"connectionLimit": 10, // maximum of 10 connections at a time
@@ -467,13 +470,101 @@ class CRUD { // class to access the database
 		return posts;
 	}
 
+	async GetAllPosts() {
+		let posts = {};
+		await new Promise((resolve) => {
+			databasePool.getConnection(function (err, connection) {
+				if (err) throw err;
+				let query = "SELECT ID, UserID, GroupID, ReplyToID, hex(Drawing) as Drawing, CreationDate, IsSpoiler, IsNSFW, IsDisabled from posts";
+				connection.query(query, function (err, result) {
+					$(terminal.note + terminal.indent + query);
+					if (err) throw err;
+					posts = result;
+					connection.release();
+					resolve();
+				});
+			})
+		});
+		return posts;
+	}
 	// GetUser
+	async GetAllUsers() {
+		let users = {};
+		await new Promise((resolve) => {
+			databasePool.getConnection(function (err, connection) {
+				if (err) throw err;
+				let query = "ID, Email, DisplayName, hex(DisplayIcon) as DisplayIcon, DisplayBio, JoinedOn, IsVerified from users";
+				connection.query(query, function (err, result) {
+					$(terminal.note + terminal.indent + query);
+					if (err) throw err;
+					users = result;
+					connection.release();
+					resolve();
+				});
+			})
+		});
+		return users;
+	}
+	async GetAllGroups() {
+		let groups = {};
+		await new Promise((resolve) => {
+			databasePool.getConnection(function (err, connection) {
+				if (err) throw err;
+				let query = "ID, CreatorID, OwnerID, TopicID, DisplayName, hex(DisplayIcon) as DisplayIcon, CreateDate, IsPrivate from groups";
+				connection.query(query, function (err, result) {
+					$(terminal.note + terminal.indent + query);
+					if (err) throw err;
+					groups = result;
+					connection.release();
+					resolve();
+				});
+			})
+		});
+		return groups;
+	}
+
+	async InsertPost(ID, userID, groupID, replyToID, drawingData, time, isSpoiler, isNSFW) {
+		await new Promise((resolve) => { // the promise that will resolve when the database has been accessed
+			databasePool.getConnection(function (err, connection) { // swim in da pool
+				if (err) throw err;
+				let query = "INSERT INTO posts (`ID`,`UserID`,`GroupID`,`ReplyToID`, `Drawing`, `CreationDate`, `IsSpoiler`, `IsNSFW`) VALUES ('" + ID + "','" + userID + "','" + groupID + "','" + replyToID + "', 0x" + drawingData + " , " + time + " , " + isSpoiler + ", " + isNSFW + ");";
+				$(terminal.note + terminal.indent + query);
+				connection.query(query, {
+					file_type: "img",
+					file_size: drawingData.length,
+					file: drawingData
+				}, function (err, result) { // splash some wattar
+					$(terminal.indent + terminal.note + query);
+					if (err) throw err;
+					connection.release(); // get out of da pool
+					resolve(); // dry yourself off
+				});
+			});
+		});
+	}
+	async DeletePost(ID) {
+		await new Promise((resolve) => { // the promise that will resolve when the database has been accessed
+			databasePool.getConnection(function (err, connection) { // swim in da pool
+				if (err) throw err;
+				let query = "UPDATE posts SET IsDisabled = 1 WHERE ID = '" + ID + "';";
+				$(terminal.note + terminal.indent + query);
+				connection.query(query, function (err, result) { // splash some wattar
+					$(terminal.indent + terminal.note + query);
+					if (err) throw err;
+					connection.release(); // get out of da pool
+					resolve(); // dry yourself off
+				});
+			});
+		});
+	}
 }
 var crud = new CRUD();
 
 async function IndexProcess(req, res) {
-	// remove this later
-	res.setHeader("Access-Control-Allow-Origin", "localhost");
+	res.setHeader("Access-Control-Allow-Credentials", "true")
+	if (["http://localhost:2000", "http://localhost:3000"].includes(req.headers["origin"])) {
+		res.setHeader('Access-Control-Allow-Origin', req.headers["origin"]);
+	}
 	// await crud.GetPublicUserInfo('');
 	// await crud.GetUserRelation('a00e8530167659caaaf2','ad43fae0aa1720c60b63');
 	function Stop(code, message) {
@@ -611,6 +702,14 @@ async function IndexProcess(req, res) {
 	//#region get the action from the url
 	// set the action here and then continue after we get the body
 	const actions = {
+		adminRemoveGroups: -8,
+		adminRemoveUsers: -7,
+		adminRemovePosts: -6,
+		adminCreateGroups: -5,
+		adminCreatePosts: -4,
+		adminSelectGroups: -3,
+		adminSelectUsers: -2,
+		adminSelectPosts: -1,
 		// /api/user/
 		checkSession: 0,
 		login: 1,
@@ -636,11 +735,38 @@ async function IndexProcess(req, res) {
 		// /api/me/friends
 		getUserSessionFriends: 16
 	}
-	let action = -1;
+	let action = -100;
 	let wrongMethod = false; // just so that we only do Stop(405) once instead of in every case, otherwise we'll have double the lines cause of $
 	let actionIndex = ""; // some api links will contain an id, this stores that id on supported actions 
 	req.method = req.method.toUpperCase(); // just convert it to uppercase in case it isnt
 	// $(req.method);
+	// $(wrongMethod);
+	if (req.url == "/api/admin/posts/") {
+		if (req.method == "GET") action = actions.adminSelectPosts;
+		else if (req.method == "POST") action = actions.adminCreatePosts;
+		else wrongMethod = true;
+	}
+	// if (req.url == "/api/admin/users/") {
+	// 	if (req.method == "GET") action = actions.adminSelectUsers;
+	// 	else wrongMethod = true;
+	// }
+	// if (req.url == "/api/admin/groups/") {
+	// 	if (req.method == "GET") action = actions.adminSelectGroups;
+	// 	else wrongMethod = true;
+	// }
+// /^\/api\/admin\/posts\/[0-9a-f]{20}\/$/.test(req.url)
+	if (/^\/api\/admin\/posts\/delete\/[0-9a-f]{20}\/$/.test(req.url)) {
+		actionIndex = req.url.slice(-21, -1);
+		if (req.method == "POST") action = actions.adminRemovePosts;
+		else wrongMethod = true;
+	}
+	if (req.url == /^\/api\/admin\/groups\/[0-9a-f]{20}\/$/.test(req.url)) {
+		actionIndex = req.url.slice(-21, -1);
+		if (req.method == "POST") action = actions.adminCreateGroup;
+		if (req.method == "DELETE") action = actions.adminRemoveGroup;
+		else wrongMethod = true;
+	}
+
 	if (req.url == "/api/user/login/") { //login
 		if (req.method == "POST") action = actions.login;
 		else wrongMethod = true; //return Stop (405); // login can only use post
@@ -709,8 +835,7 @@ async function IndexProcess(req, res) {
 		$(terminal.danger + "Requested action exists, but method was incorrect");
 		return Stop(405); // method not allowed
 	}
-	$(action);
-	if (action == -1) {
+	if (action == -100) {
 		$(terminal.danger + "Requested action does not exist, wrong method or link")
 		return Stop(404);
 	}
@@ -760,6 +885,7 @@ async function IndexProcess(req, res) {
 				"data": result[0].DisplayIcon,
 				"bio": result[0].DisplayBio,
 				"date": result[0].JoinedOn,
+				"verified": result[0].IsVerified,
 				"message": "ALREADY_LOGGED_IN",
 
 			}));
@@ -779,7 +905,7 @@ async function IndexProcess(req, res) {
 		}
 	}
 	//#endregion
-	//#region /user/login
+	//#region /user/
 	if (action == actions.login) {
 		$(terminal.info + "Selected action: login")
 		// seems that *.includes works, but not the in keyword
@@ -805,7 +931,7 @@ async function IndexProcess(req, res) {
 		let hashedPassword = crypto.createHmac('sha1', hashKey).update(requestJSON["password"]).digest("hex"); // generate the hash as hexidecimal characters, I have no clue what this stuff means
 		let result = await crud.GetUser(true, requestJSON["email"]);
 		// $(result);
-		$(result);
+		// $(result);
 		if (result[0] === undefined) {
 			$(terminal.danger + "No account was found with that email address.");
 			return Stop(404, "LOGIN_USER_NOT_FOUND");
@@ -816,6 +942,12 @@ async function IndexProcess(req, res) {
 			$(terminal.success + "Client password matches account password")
 			session.Create(); // doesn't actually make the file, only sets the cookie and generates the cookie
 			session.values["UserID"] = result[0]["ID"]; // set the user id of the session
+			if (admins.includes(session.values["UserID"])) { // the user is in the special list of admins
+				session.values["IsAdmin"] = true; // log in as an admin
+				$(terminal.success + "User is an admin. Bonjour monsieur.");
+			} else {
+				session.values["IsAdmin"] = false;
+			}
 			session.Update(); // create the file
 			res.write(JSON.stringify({
 				email: result[0]["Email"],
@@ -823,6 +955,7 @@ async function IndexProcess(req, res) {
 				data: result[0]["DisplayIcon"],
 				bio: result[0]["DisplayBio"],
 				verified: result[0]["IsVerified"],
+				admin: session.values["IsAdmin"],
 				message: "LOGIN_CORRECT"
 			}));
 			return Stop(200)
@@ -1084,8 +1217,119 @@ async function IndexProcess(req, res) {
 			return Stop(401, "NOT_SIGNED_IN");
 		}
 	}
+	//#endregion
+	//#region /admin/posts/ - admin select posts
+	if (action == actions.adminSelectPosts) {
+		$(terminal.info + "Selected action: Get all posts as an admin");
+		if (session.values.UserID !== undefined) {
+			if (session.values.IsAdmin == true) {
+				let result = await crud.GetAllPosts();
+				res.write(JSON.stringify(result));
+				return Stop(200);
+			} else {
+				$(terminal.danger + "User is not an admin")
+				return Stop(401);
+			}
+		} else {
+			$(terminal.danger + "User is not signed in")
+			return Stop(401);
+		}
+	}
+	//#endregion 
+	//#region /admin/users/ admin select users
+	if (action == actions.adminSelectUsers) {
+		$(terminal.info + "Selected action: Get all users as an admin");
+		if (session.values.UserID !== undefined) {
+			if (session.values.IsAdmin == true) {
+				let result = await crud.GetAllUsers();
+				res.write(JSON.stringify(result));
+				return Stop(200);
+			} else {
+				$(terminal.danger + "User is not an admin")
+				return Stop(401);
+			}
+		} else {
+			$(terminal.danger + "User is not signed in")
+			return Stop(401);
+		}
+	}
+	//#endregion 
+	//#region /admin/groups/ admin select groups
+	if (action == actions.adminSelectGroups) {
+		$(terminal.info + "Selected action: Get all groups as an admin");
+		if (session.values.UserID !== undefined) {
+			if (session.values.IsAdmin == true) {
+				let result = await crud.GetAllGroups();
+				res.write(JSON.stringify(result));
+				return Stop(200);
+			} else {
+				$(terminal.danger + "User is not an admin")
+				return Stop(401);
+			}
+		} else {
+			$(terminal.danger + "User is not signed in")
+			return Stop(401);
+		}
+	}
+	//#endregion 
+	//#region /admin/posts/{id} - admin delete 
+	if (action == actions.adminRemovePosts) {
+		$(terminal.info + "Selected action: delete a post as an admin");
+		if (session.values.UserID !== undefined) {
+			if (session.values.IsAdmin == true) {
+				await crud.DeletePost(actionIndex);
+				$(terminal.danger + "Post has been deleted")
+				return Stop(202);
+			}
+		} else {
+			$(terminal.danger + "User is not an admin")
+			return Stop(401);
+		}
+	} else {
+		$(terminal.danger + "User is not signed in")
+		return Stop(401);
+	}
+
+
+	//#region /admin/posts - admin create post
+	if (action == actions.adminCreatePosts) {
+		$(terminal.info + "Selected action: create a post as an admin");
+		if (session.values.UserID !== undefined) {
+			if (session.values.IsAdmin == true) {
+				if (CheckRequestKeys(["userID", "groupID", "drawingData", "replyToID", "isSpoiler", "isNSFW"])) {
+					if (/^[0-9a-f]{20}$/.test(requestJSON["userID"])) {
+						if (/^[0-9a-f]{20}$/.test(requestJSON["groupID"])) {
+							let chunk = Buffer.from(requestJSON["drawingData"]);
+							await crud.InsertPost(crypto.randomBytes(10).toString("hex"), requestJSON["userID"], requestJSON["groupID"], requestJSON["replyToID"], chunk, Date.now() / 1000, requestJSON["isSpoiler"], requestJSON["isNSFW"]);
+							$(terminal.success + "Created new post")
+							return Stop(201);
+						} else {
+							$(terminal.danger + "Invalid group ID")
+							return Stop(400);
+						}
+					} else {
+						$(terminal.danger + "Invalid user ID");
+						return Stop(400);
+					}
+				} else {
+					$(terminal.danger + "Request is insufficient")
+					return Stop(400);
+				}
+
+
+			} else {
+				$(terminal.danger + "User is not an admin")
+				return Stop(401);
+			}
+		} else {
+			$(terminal.danger + "User is not signed in")
+			return Stop(401);
+		}
+	}
+	//#endregion
 	return Stop(400);
+
 }
 
 // server.listen(3000, '192.168.0.143');
-server.listen(3000, serverHost);
+server.listen(2000, serverHost);
