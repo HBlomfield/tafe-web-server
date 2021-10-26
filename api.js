@@ -29,10 +29,10 @@
 // O response body is in json form
 
 // part c
-// denote where and explani why you instantiated the database and session objects in that location
-// explain the maths of either of your two rate limiting codes // line 457
-// note where you are checking if a session exists, and what do if it does // session class
-// write a readme file that explains how to set up and configure web service 
+// O denote where and explani why you instantiated the database and session objects in that location
+// O explain the maths of either of your two rate limiting codes // line 457
+// O note where you are checking if a session exists, and what do if it does // session class
+// O write a readme file that explains how to set up and configure web service 
 // write a test script to test all of the get and post requests // thunderclient
 
 // Naming convention:
@@ -413,7 +413,7 @@ class CRUD { // class to access the database
 						if (err) throw err;
 						postInfo = result;
 						// $(result);
-						$(typeof (result[0]["PostDrawing"]));
+						// $(typeof (result[0]["PostDrawing"]));
 						resolve();
 					});
 				});
@@ -754,7 +754,7 @@ async function IndexProcess(req, res) {
 	// 	if (req.method == "GET") action = actions.adminSelectGroups;
 	// 	else wrongMethod = true;
 	// }
-// /^\/api\/admin\/posts\/[0-9a-f]{20}\/$/.test(req.url)
+	// /^\/api\/admin\/posts\/[0-9a-f]{20}\/$/.test(req.url)
 	if (/^\/api\/admin\/posts\/delete\/[0-9a-f]{20}\/$/.test(req.url)) {
 		actionIndex = req.url.slice(-21, -1);
 		if (req.method == "POST") action = actions.adminRemovePosts;
@@ -797,7 +797,7 @@ async function IndexProcess(req, res) {
 		else wrongMethod = true;
 	}
 	if (req.url == "/api/session/") {
-		if (req.method == "GET") action = actions.checkUserSession;
+		if (req.method == "GET") action = actions.checkSession;
 		else wrongMethod = true;
 	}
 	// if (req.url == "/api/reset-password/") {
@@ -855,7 +855,7 @@ async function IndexProcess(req, res) {
 		}
 	);
 	// wait for the request body to be obtained
-	let requestJson = {};
+	let requestJSON = {};
 	let requestKeys = [];
 	if (requestBody.length > 0) {
 		try {
@@ -1056,21 +1056,23 @@ async function IndexProcess(req, res) {
 		}
 		// let result = await crud.GetUser(false, session.values["UserID"]); // get the values of the user from the session
 		let result = await crud.GetUser(false, session.values["UserID"]); // get the values of the user from the session
-		if (result[0]["IsVerified"] == 1) {
-			$(terminal.danger + "User is already verified");
-			return Stop(409, "VERIFY_CONFLICT"); // trying to verify verified account
-		}
-		// $(result[0]["VerificationCode"], requestJSON["verificationCode"])
-		if (result[0]["VerificationCode"] == requestJSON["verificationCode"]) { // verification code matches the client verification code
-			$(terminal.success + "Verification code is correct");
-			await crud.VerifyUser(session.values["UserID"]); // set the verified value of the user account to 1
-			$(terminal.success + "User is now verified");
-			return Stop(200, "VERIFY_SUCCESS");
-			// $(terminal.danger + "SQL ERROR! Check that SQL is running");
-		} else {
-			$(terminal.danger + "Code is incorrect");
-			// possibly reshuffle the code here? maybe later
-			return Stop(404, "VERIFY_INCORRECT_CODE");
+		if (result !== undefined && result[0] !== undefined && result[0]["IsVerified"] !== undefined) {
+			if (result[0] !== undefined && result[0]["IsVerified"] == 1) {
+				$(terminal.danger + "User is already verified");
+				return Stop(409, "VERIFY_CONFLICT"); // trying to verify verified account
+			}
+			// $(result[0]["VerificationCode"], requestJSON["verificationCode"])
+			if (result[0]["VerificationCode"] == requestJSON["verificationCode"]) { // verification code matches the client verification code
+				$(terminal.success + "Verification code is correct");
+				await crud.VerifyUser(session.values["UserID"]); // set the verified value of the user account to 1
+				$(terminal.success + "User is now verified");
+				return Stop(200, "VERIFY_SUCCESS");
+				// $(terminal.danger + "SQL ERROR! Check that SQL is running");
+			} else {
+				$(terminal.danger + "Code is incorrect");
+				// possibly reshuffle the code here? maybe later
+				return Stop(404, "VERIFY_INCORRECT_CODE");
+			}
 		}
 		// } catch {
 		// 	$(terminal.danger + "SQL ERROR! Check that SQL is running");
@@ -1164,7 +1166,7 @@ async function IndexProcess(req, res) {
 
 		// $(result);
 
-		if (result === undefined || result === undefined || result.length == 0) { // if the post was not found, or slq error happened
+		if (result === undefined || result === undefined || result.length == 0 || result.groupInfo.length == 0) { // if the post was not found, or slq error happened
 			$(terminal.danger + "Post was not found")
 			return Stop(404, "POST_NOT_FOUND");
 		}

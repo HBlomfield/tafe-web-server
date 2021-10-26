@@ -1,4 +1,6 @@
-const hostURL = window.location.href.slice(0, -18);
+// const hostURL = window.location.href.slice(0, -18);
+const hostURL = "https://ef26-138-44-128-241.ngrok.io";
+
 function LoadServiceWorker() {
 	navigator.serviceWorker.register("/public/serviceWorker.js").then(registration => {
 		// console.log(registration);
