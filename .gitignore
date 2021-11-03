@@ -1,6 +1,9 @@
 site/IP/blocked/*
+!site/IP/blocked/.keep-in-github
 site/IP/access/*
+!site/IP/access/.keep-in-github
 site/sessions/*
+!site/sessions/.keep-in-github
 node_modules/*/*
 .firebase
 .firebase/*
