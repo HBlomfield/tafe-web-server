@@ -1,6 +1,7 @@
 site/IP/blocked/*
 site/IP/access/*
 site/sessions/*
+site/config/ssl/*
 node_modules/*/*
 .firebase
 .firebase/*

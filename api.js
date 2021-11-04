@@ -56,7 +56,7 @@ function $(value) { // lets just make this function here for the sake of quickne
 }
 //#endregion
 //#region packages
-const http = require("http");
+const http = require("https");
 const fs = require("fs");
 const crypto = require("crypto");
 const mysql = require("mysql");
@@ -64,24 +64,16 @@ const mysql = require("mysql");
 
 // const hashKey = crypto.generateKey("hmac",{length:64}); // generate a cryto key (because this is generated every time, I can this only being a temporary solution)
 const hashKey = "lorem ipsum";
-const acceptedHost = "localhost:3000";
-const serverHost = "localhost";
-
-// const sslOptions = {
-// 	key: fs.readFileSync("site/config/ssl/localhost.decrypted.key"),
-// 	cert: fs.readFileSync("site/config/ssl/localhost.crt")
-// };
-// const sslOptions = {
-// 	key: fs.readFileSync('site/config/ssl/key.pem', 'utf-8').toString(),
-// 	cert: fs.readFileSync('site/config/ssl/server.crt', 'utf-8').toString(),
-// 	// ciphers: 'ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES256-SHA384',
-// 	// honorCipherOrder: true,
-// 	// secureProtocol: 'TLSv1_2_method'
-// };
+// const acceptedHost = "localhost:3000";
+const serverHost = "192.168.0.143";
+// const serverHost = "scribblet";
+const sslOptions = {
+	cert: fs.readFileSync('site/config/ssl/scribbet.pem'),
+	key: fs.readFileSync('site/config/ssl/scribbet.key')
+};
 
 // although the thunder client and such works, there are issues when using curl. Probably wont be a great idea to use openSSL when hosting, cloudflare or something would be used instead
-const server = http.createServer( /*sslOptions,*/ (request, response) => IndexProcess(request, response));
-
+const server = http.createServer(sslOptions, (request, response) => IndexProcess(request, response));
 const accessPath = "site/IP/access/";
 const blockedPath = "site/IP/blocked/";
 const sessionPath = "site/sessions/";
@@ -558,13 +550,15 @@ class CRUD { // class to access the database
 		});
 	}
 }
-var crud = new CRUD();
 
 async function IndexProcess(req, res) {
+	// console.log(req.headers.host);
+	// req.headers.port;
+	// console.log(req)
 	res.setHeader("Access-Control-Allow-Credentials", "true")
-	if (["http://localhost:2000", "http://localhost:3000"].includes(req.headers["origin"])) {
-		res.setHeader('Access-Control-Allow-Origin', req.headers["origin"]);
-	}
+	// if (["http://"+serverHost, "http://"+serverHost].includes(req.headers["origin"])) {
+		// res.setHeader('Access-Control-Allow-Origin', req.headers["origin"]);
+	// }
 	// await crud.GetPublicUserInfo('');
 	// await crud.GetUserRelation('a00e8530167659caaaf2','ad43fae0aa1720c60b63');
 	function Stop(code, message) {
@@ -612,7 +606,7 @@ async function IndexProcess(req, res) {
 		let reqFile = "/"
 		if (req.url == "/" || req.url == "/index.html") { // if the user is trying to access the main site, send the index
 			// reqFile = "public/index.html";
-			res.setHeader("Location", "/public/index.html");
+			// res.setHeader("Location", "/public/index.html");
 			$(terminal.info + "Index was requested, so redirected to /public/index.html")
 			return Stop(308)
 		} else {
@@ -647,26 +641,26 @@ async function IndexProcess(req, res) {
 		} else {
 			accessToday = 0;
 		}
-		// if (accessToday > 1000) { // turn this off while I work on the UX2 
-		// 	$(terminal.danger + "More than 1000 accesses today");
-		// 	return Stop(429);
-		// }
+		if (accessToday > 1000) { // turn this off while I work on the UX2 
+			$(terminal.danger + "More than 1000 accesses today");
+			return Stop(429);
+		}
 		fs.writeFileSync(accessPath + req.connection.remoteAddress, Date.now().toString() + "\n" + accessToday); // update the last access time in the file, we do this before checking the time otherwise the requester can still squeeze 1 request in
-		// if (Date.now() - access < 1000) { // the user has requested multiple times in the span of 1 seconds
-		// 	$(terminal.danger + "Last access was less than a second ago"); // 1000 milliseconsd is 1 second, if the time+1000 is less time, it means a second has not yet psased 
-		// 	return Stop(429);
+		if (Date.now() - access < 1000) { // the user has requested multiple times in the span of 1 seconds
+			$(terminal.danger + "Last access was less than a second ago"); // 1000 milliseconsd is 1 second, if the time+1000 is less time, it means a second has not yet psased 
+			return Stop(429);
 
-		// }
+		}
 	} else {
 		$(terminal.info + "This is the first access by this IP");
 		fs.writeFileSync(accessPath + req.connection.remoteAddress, 'test') //Date.now().toString()); // create a new file with the time of access
 	}
 	//#endregion
 	//#region origin blocking
-	// if (req.headers["host"] != acceptedHost) { // if coming from terminal (and sketchy user forgets the origin), or coming from a fake website, block the request and send a 401
-	// 	$(terminal.danger + "Request is not from an acceptable host");
-	// 	return Stop(403);
-	// }
+	if (req.headers["host"] != acceptedHost) { // if coming from terminal (and sketchy user forgets the origin), or coming from a fake website, block the request and send a 401
+		$(terminal.danger + "Request is not from an acceptable host");
+		return Stop(403);
+	}
 	if (fs.existsSync(blockedPath + req.connection.remoteAddress)) { // the blocked IP addresses only contain the time they can be unblocked, or -1 for permabans
 		$(terminal.danger + "Request is coming from a previously blocked IP address");
 		let unblockTime = Number(fs.readFileSync(blockedPath + req.connection.remoteAddress));
@@ -877,6 +871,8 @@ async function IndexProcess(req, res) {
 
 		if (action == actions.login || action == actions.register) {
 			$(terminal.danger + "User is already logged in");
+			let crud = new CRUD();
+
 			let result = await crud.GetUser(false, session.values.UserID);
 			// console.log(result);
 			res.write(JSON.stringify({
@@ -929,6 +925,8 @@ async function IndexProcess(req, res) {
 		}
 		// later on, implement a more stable encryption using salts and the crypto verify function
 		let hashedPassword = crypto.createHmac('sha1', hashKey).update(requestJSON["password"]).digest("hex"); // generate the hash as hexidecimal characters, I have no clue what this stuff means
+		let crud = new CRUD();
+		
 		let result = await crud.GetUser(true, requestJSON["email"]);
 		// $(result);
 		// $(result);
@@ -1012,6 +1010,7 @@ async function IndexProcess(req, res) {
 		}
 		let hashedPassword = crypto.createHmac('sha1', hashKey).update(requestJSON["password"]).digest("hex"); // generate the hash as hexidecimal characters
 
+		let crud = new CRUD();
 		let result = await crud.GetUser(true, requestJSON["email"]);
 		// $(result);
 		if (result === undefined || result.length == 0) { // the sql query always returns the [0] of the result an array, if nothing is found it will be undefined
@@ -1055,6 +1054,7 @@ async function IndexProcess(req, res) {
 			return Stop(403, "VERIFY_NO_LOGIN"); // not authorised to validate your account if you aren't logged in to said account?
 		}
 		// let result = await crud.GetUser(false, session.values["UserID"]); // get the values of the user from the session
+		let crud = new CRUD();
 		let result = await crud.GetUser(false, session.values["UserID"]); // get the values of the user from the session
 		if (result !== undefined && result[0] !== undefined && result[0]["IsVerified"] !== undefined) {
 			if (result[0] !== undefined && result[0]["IsVerified"] == 1) {
@@ -1112,6 +1112,7 @@ async function IndexProcess(req, res) {
 	//#region /user/{id} get user
 	if (action == actions.getUser) {
 		$(terminal.info + "Selected action: Get user");
+		let crud = new CRUD();
 		let result = await crud.GetPublicUserInfo(actionIndex);
 		if (result === undefined || result.user === undefined || result.user.length == 0) { // if the user is not found, or an sql error of some sort happens
 			$(terminal.danger + "User was not found");
@@ -1131,6 +1132,7 @@ async function IndexProcess(req, res) {
 	//#region /post/ get explore (all posts for now)
 	if (action == actions.explorePosts) {
 		$(terminal.info + "Selected action: Explore posts");
+		let crud = new CRUD();
 		let result = await crud.GetExplore();
 		if (result === undefined || result.length == 0) { // if the post was not found, or slq error happened
 			$(terminal.danger + "No Posts were found")
@@ -1144,6 +1146,7 @@ async function IndexProcess(req, res) {
 	//#region /post/{id} get post
 	if (action == actions.readPost) {
 		$(terminal.info + "Selected action: Get post");
+		let crud = new CRUD();
 		let result = await crud.GetPost(actionIndex);
 		if (result === undefined || result.post === undefined || result.post.length == 0) { // if the post was not found, or slq error happened
 			$(terminal.danger + "Post was not found")
@@ -1162,6 +1165,7 @@ async function IndexProcess(req, res) {
 	if (action == actions.getGroup) {
 		$(terminal.info + "Selected action: Get group info and posts");
 		$(actionIndex);
+		let crud = new CRUD();
 		let result = await crud.GetGroup(actionIndex);
 
 		// $(result);
@@ -1180,6 +1184,7 @@ async function IndexProcess(req, res) {
 	if (action == actions.getUserSessionDetails) { // this gets the basic details of the user's account from the session. We don't want to be sending the user's password to the client, for example
 		$(terminal.info + "Selected action: Get user account details from session");
 		if (session.values.UserID !== undefined) {
+			let crud = new CRUD();
 			let result = await crud.GetUser(false, session.values.UserID);
 			if (result.length == 0 || result === undefined) {
 				$(terminal.danger + "User was not found");
@@ -1204,6 +1209,7 @@ async function IndexProcess(req, res) {
 	if (action == actions.getUserSessionGroups) { // this gets the details of the user's groups, as well as 
 		$(terminal.info + "Selected action: Get user groups from session");
 		if (session.values.UserID !== undefined) {
+			let crud = new CRUD();
 			let result = await crud.GetUserGroups(session.values.UserID);
 			if (result.length == 0 || result === undefined) {
 				$(terminal.danger + "User was not found");
@@ -1225,7 +1231,8 @@ async function IndexProcess(req, res) {
 		$(terminal.info + "Selected action: Get all posts as an admin");
 		if (session.values.UserID !== undefined) {
 			if (session.values.IsAdmin == true) {
-				let result = await crud.GetAllPosts();
+			let crud = new CRUD();
+			let result = await crud.GetAllPosts();
 				res.write(JSON.stringify(result));
 				return Stop(200);
 			} else {
@@ -1243,7 +1250,8 @@ async function IndexProcess(req, res) {
 		$(terminal.info + "Selected action: Get all users as an admin");
 		if (session.values.UserID !== undefined) {
 			if (session.values.IsAdmin == true) {
-				let result = await crud.GetAllUsers();
+			let crud = new CRUD();
+			let result = await crud.GetAllUsers();
 				res.write(JSON.stringify(result));
 				return Stop(200);
 			} else {
@@ -1261,7 +1269,8 @@ async function IndexProcess(req, res) {
 		$(terminal.info + "Selected action: Get all groups as an admin");
 		if (session.values.UserID !== undefined) {
 			if (session.values.IsAdmin == true) {
-				let result = await crud.GetAllGroups();
+			let crud = new CRUD();
+			let result = await crud.GetAllGroups();
 				res.write(JSON.stringify(result));
 				return Stop(200);
 			} else {
@@ -1279,7 +1288,8 @@ async function IndexProcess(req, res) {
 		$(terminal.info + "Selected action: delete a post as an admin");
 		if (session.values.UserID !== undefined) {
 			if (session.values.IsAdmin == true) {
-				await crud.DeletePost(actionIndex);
+			let crud = new CRUD();
+			await crud.DeletePost(actionIndex);
 				$(terminal.danger + "Post has been deleted")
 				return Stop(202);
 			}
@@ -1302,6 +1312,8 @@ async function IndexProcess(req, res) {
 					if (/^[0-9a-f]{20}$/.test(requestJSON["userID"])) {
 						if (/^[0-9a-f]{20}$/.test(requestJSON["groupID"])) {
 							let chunk = Buffer.from(requestJSON["drawingData"]);
+							
+							let crud = new CRUD();
 							await crud.InsertPost(crypto.randomBytes(10).toString("hex"), requestJSON["userID"], requestJSON["groupID"], requestJSON["replyToID"], chunk, Date.now() / 1000, requestJSON["isSpoiler"], requestJSON["isNSFW"]);
 							$(terminal.success + "Created new post")
 							return Stop(201);
@@ -1334,4 +1346,5 @@ async function IndexProcess(req, res) {
 }
 
 // server.listen(3000, '192.168.0.143');
-server.listen(2000, serverHost);
+server.listen(443, serverHost);
+// server.listen(80, serverHost);

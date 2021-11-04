@@ -1,12 +1,12 @@
 // const hostURL = window.location.href.slice(0, -18);
-const hostURL = "https://ef26-138-44-128-241.ngrok.io";
+const hostURL = "https://scribbet.com";
 
-function LoadServiceWorker() {
-	navigator.serviceWorker.register("/public/serviceWorker.js").then(registration => {
-		// console.log(registration);
-	}, (err) => console.log(err));
-	// console.log("service worker added");
-}
+// function LoadServiceWorker() {
+// 	navigator.serviceWorker.register("/public/serviceWorker.js").then(registration => {
+// 		// console.log(registration);
+// 	}, (err) => console.log(err));
+// 	// console.log("service worker added");
+// }
 
 function $(ID) { // I always thought the $ used in jquery was some magic thing, but apparently you can just use $ as a name for functions
 	return document.getElementById(ID);
