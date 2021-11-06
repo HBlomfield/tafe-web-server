@@ -64,8 +64,8 @@ const mysql = require("mysql");
 
 // const hashKey = crypto.generateKey("hmac",{length:64}); // generate a cryto key (because this is generated every time, I can this only being a temporary solution)
 const hashKey = "lorem ipsum";
-// const acceptedHost = "localhost:3000";
-const serverHost = "192.168.0.143";
+const acceptedHost = "localhost:3000";
+const serverHost = "localhost";
 // const serverHost = "scribblet";
 const sslOptions = {
 	cert: fs.readFileSync('site/config/ssl/scribbet.pem'),
@@ -1346,5 +1346,5 @@ async function IndexProcess(req, res) {
 }
 
 // server.listen(3000, '192.168.0.143');
-server.listen(443, serverHost);
+server.listen(2000, serverHost);
 // server.listen(80, serverHost);
