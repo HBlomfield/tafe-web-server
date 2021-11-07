@@ -174,7 +174,7 @@ async function test() {
 	options.method = "POST";
 	await request( {"email":eml,"password":"ABCDEFG"},SetCookie = false);
 	$()
-	$("Try to verify account email (incorrect code) (target:400)")
+	$("Try to verify account email (incorrect code) (target:404)")
 	$("/api/user/verify/", colours.note);
 	options.path = "/api/user/verify/";
 	options.method = "POST";
