@@ -6,7 +6,7 @@
 * Run `node api.js` (make sure sql is running)
 * Pray that it will run without errors
 * In /public/main.js/ set the hostURL variable to the name of the domain your server will run on, eg https://localhost:3000
-* Open the site at http://{serverhost} -> default http://localhost:2000
+* Open the site at http://{serverhost}/public/index.html -> default http://localhost:2000/public/index.html
 * Access the API at http://{serverhost}/api/{action} -> default http://localhost:2000/api/{action}
 
 ## To run test script

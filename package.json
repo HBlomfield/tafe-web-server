@@ -1,0 +1,23 @@
+{
+  "name": "apptafe",
+  "version": "1.0.0",
+  "description": "* Import the .sql database\r * Change the const configSQL to values for your sql database (line 151)\r * Change the acceptedhost const to only allow requests from the server specified (default localhost:2000) (line 67)\r * Change the serverhost const to change where the server is listening on (line 68)\r * Run `node api.js` (make sure sql is running)\r * Pray that it will run without errors\r * In /public/main.js/ set the hostURL variable to the name of the domain your server will run on, eg https://localhost:3000\r * Open the site at http://{serverhost} -> default http://localhost:2000\r * Access the API at http://{serverhost}/api/{action} -> default http://localhost:2000/api/{action}",
+  "main": "api.js",
+  "dependencies": { 
+    "mysql": "^2.18.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HBlomfield/tafe-web-server.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HBlomfield/tafe-web-server/issues"
+  },
+  "homepage": "https://github.com/HBlomfield/tafe-web-server#readme"
+}
