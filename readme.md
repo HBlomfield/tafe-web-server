@@ -1,5 +1,7 @@
 ## To run API and single page app
+* pull from this repository
 * Import the .sql database
+* run `npm install mysql` to ensure mysql is installed
 * Change the const configSQL to values for your sql database (line 151)
 * Change the acceptedhost const to only allow requests from the server specified (default localhost:2000) (line 67)
 * Change the serverhost const to change where the server is listening on (line 68)
