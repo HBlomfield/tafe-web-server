@@ -3,11 +3,8 @@ site/IP/blocked/*
 site/IP/access/*
 !site/IP/access/.keep-in-github
 site/sessions/*
-site/config/ssl/*
 !site/sessions/.keep-in-github
 node_modules/*/*
 node_modules/*
-.firebase
-.firebase/*
 .github/*
 *.pdf

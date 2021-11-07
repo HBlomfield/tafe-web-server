@@ -1,5 +1,4 @@
-const https = require("http");
-
+const http = require("http");
 const crypto = require("crypto");
 const options = {
 	host: "localhost",
@@ -33,7 +32,7 @@ function $(text="", colour = "\033[97m") {
 var cookie = "";
 function request(data = null, setCookie=false) {
 	return new Promise((resolve) => {
-		let req = https.request(options, function (res) {
+		let req = http.request(options, function (res) {
 			
 			res.on("data", chunk=> {
 				$(chunk.slice(0, 50) + "...", colours.note);	

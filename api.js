@@ -56,7 +56,7 @@ function $(value) { // lets just make this function here for the sake of quickne
 }
 //#endregion
 //#region packages
-const http = require("http");
+const http = require("https");
 const fs = require("fs");
 const crypto = require("crypto");
 const mysql = require("mysql");
@@ -65,11 +65,16 @@ const mysql = require("mysql");
 // const hashKey = crypto.generateKey("hmac",{length:64}); // generate a cryto key (because this is generated every time, I can this only being a temporary solution)
 const hashKey = "lorem ipsum";
 <<<<<<< HEAD
+<<<<<<< HEAD
 const acceptedHost = "localhost:2000";
 =======
 const acceptedHost = "localhost:3000";
 >>>>>>> 55f8a8d1d3671d7697d08ca46ae2e94e540781a2
 const serverHost = "localhost";
+=======
+// const acceptedHost = "localhost:3000";
+const serverHost = "192.168.0.143";
+>>>>>>> parent of 842c5bc (removed https for now so that test script works)
 // const serverHost = "scribblet";
 const sslOptions = {
 	cert: fs.readFileSync('site/config/ssl/scribbet.pem'),
@@ -77,7 +82,7 @@ const sslOptions = {
 };
 
 // although the thunder client and such works, there are issues when using curl. Probably wont be a great idea to use openSSL when hosting, cloudflare or something would be used instead
-const server = http.createServer(/*sslOptions,*/ (request, response) => IndexProcess(request, response));
+const server = http.createServer(sslOptions, (request, response) => IndexProcess(request, response));
 const accessPath = "site/IP/access/";
 const blockedPath = "site/IP/blocked/";
 const sessionPath = "site/sessions/";
@@ -635,30 +640,30 @@ async function IndexProcess(req, res) {
 	//#endregion
 	//#region rate limiting
 	// to add: use access file to track last access, and block if more than 1 per second, 1000 per day (429)
-	// if (fs.existsSync(accessPath + req.connection.remoteAddress)) { // check the file exists before trying to read it
-	// 	let accessFile = fs.readFileSync(accessPath + req.connection.remoteAddress).toString();
-	// 	let access = Number(accessFile.split("\n")[0]); // read the contents of the file that stores the access data
-	// 	let accessToday = Number(accessFile.split("\n")[1]);
-	// 	$(terminal.note + terminal.indent + "Last Access: " + new Date(access).toString());
-	// 	if (Date.now() - access < (1000 * 60 * 60 * 24)) { // if it has been a day since the last access, reset the amount of accesses in the 24 hour period
-	// 		accessToday += 1;
-	// 	} else {
-	// 		accessToday = 0;
-	// 	}
-	// 	if (accessToday > 1000) { // turn this off while I work on the UX2 
-	// 		$(terminal.danger + "More than 1000 accesses today");
-	// 		return Stop(429);
-	// 	}
-	// 	fs.writeFileSync(accessPath + req.connection.remoteAddress, Date.now().toString() + "\n" + accessToday); // update the last access time in the file, we do this before checking the time otherwise the requester can still squeeze 1 request in
-	// 	if (Date.now() - access < 1000) { // the user has requested multiple times in the span of 1 seconds
-	// 		$(terminal.danger + "Last access was less than a second ago"); // 1000 milliseconsd is 1 second, if the time+1000 is less time, it means a second has not yet psased 
-	// 		return Stop(429);
+	if (fs.existsSync(accessPath + req.connection.remoteAddress)) { // check the file exists before trying to read it
+		let accessFile = fs.readFileSync(accessPath + req.connection.remoteAddress).toString();
+		let access = Number(accessFile.split("\n")[0]); // read the contents of the file that stores the access data
+		let accessToday = Number(accessFile.split("\n")[1]);
+		$(terminal.note + terminal.indent + "Last Access: " + new Date(access).toString());
+		if (Date.now() - access < (1000 * 60 * 60 * 24)) { // if it has been a day since the last access, reset the amount of accesses in the 24 hour period
+			accessToday += 1;
+		} else {
+			accessToday = 0;
+		}
+		if (accessToday > 1000) { // turn this off while I work on the UX2 
+			$(terminal.danger + "More than 1000 accesses today");
+			return Stop(429);
+		}
+		fs.writeFileSync(accessPath + req.connection.remoteAddress, Date.now().toString() + "\n" + accessToday); // update the last access time in the file, we do this before checking the time otherwise the requester can still squeeze 1 request in
+		if (Date.now() - access < 1000) { // the user has requested multiple times in the span of 1 seconds
+			$(terminal.danger + "Last access was less than a second ago"); // 1000 milliseconsd is 1 second, if the time+1000 is less time, it means a second has not yet psased 
+			return Stop(429);
 
-	// 	}
-	// } else {
-	// 	$(terminal.info + "This is the first access by this IP");
-	// 	fs.writeFileSync(accessPath + req.connection.remoteAddress, 'test') //Date.now().toString()); // create a new file with the time of access
-	// }
+		}
+	} else {
+		$(terminal.info + "This is the first access by this IP");
+		fs.writeFileSync(accessPath + req.connection.remoteAddress, 'test') //Date.now().toString()); // create a new file with the time of access
+	}
 	//#endregion
 	//#region origin blocking
 	if (req.headers["host"] != acceptedHost) { // if coming from terminal (and sketchy user forgets the origin), or coming from a fake website, block the request and send a 401
@@ -1350,9 +1355,15 @@ async function IndexProcess(req, res) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 server.listen(2000, serverHost);
 =======
 // server.listen(3000, '192.168.0.143');
 server.listen(2000, serverHost);
 // server.listen(80, serverHost);
 >>>>>>> 55f8a8d1d3671d7697d08ca46ae2e94e540781a2
+=======
+// server.listen(3000, '192.168.0.143');
+server.listen(443, serverHost);
+// server.listen(80, serverHost);
+>>>>>>> parent of 842c5bc (removed https for now so that test script works)

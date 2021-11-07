@@ -1,5 +1,5 @@
 // const hostURL = window.location.href.slice(0, -18);
-const hostURL = "https://localhost:2000";
+const hostURL = "https://scribbet.com";
 
 // function LoadServiceWorker() {
 // 	navigator.serviceWorker.register("/public/serviceWorker.js").then(registration => {
@@ -83,7 +83,7 @@ class Post { // store posts inside a class, makes it easier to use
 			this.canvas.height = 144;
 		} else {
 			this.canvas.width = 256;
-			this.canvas.height = 256;
+			this.canvas.height = 196;
 		}
 		this.userFigure = document.createElement("figure");
 
@@ -127,7 +127,7 @@ class Post { // store posts inside a class, makes it easier to use
 
 		if (this.data != null) {
 			if (this.isReply) this.imageData = renderImage(this.canvas, this.data, 192, 144); // render the image
-			else this.imageData = renderImage(this.canvas, this.data, 256, 256); // render the image
+			else this.imageData = renderImage(this.canvas, this.data, 256, 192); // render the image
 		}
 		this.parent = parent;
 		this.parent.append(this.mainElement);
@@ -379,7 +379,7 @@ function CloseAllPages() {
 
 function renderImage(canvas, data, width, height) {
 	let context = canvas.getContext("2d");
-	let imageData = context.createImageData(256, 256);
+	let imageData = context.createImageData(256, 196);
 	context.imageSmoothingEnabled = false;
 	context.webkitImageSmoothingEnabled = false;
 	context.mozImageSmoothingEnabled = false;
