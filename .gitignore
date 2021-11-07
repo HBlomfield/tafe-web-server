@@ -3,12 +3,10 @@ site/IP/blocked/*
 site/IP/access/*
 !site/IP/access/.keep-in-github
 site/sessions/*
-<<<<<<< HEAD
 site/config/ssl/*
-=======
 !site/sessions/.keep-in-github
->>>>>>> 5c17b30e32f80031bd3c6b625b565ddc8bbe4ca8
 node_modules/*/*
+node_modules/*
 .firebase
 .firebase/*
 .github/*
